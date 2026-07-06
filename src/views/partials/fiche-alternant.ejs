@@ -1,0 +1,128 @@
+<div class="card">
+  <div class="row-flex" style="margin-bottom:22px;">
+    <div class="avatar" style="width:54px;height:54px;border-radius:13px;background:<%= alternant.avatar_color %>;font-size:18px;">
+      <%= (alternant.prenom[0] + alternant.nom[0]).toUpperCase() %>
+    </div>
+    <div>
+      <div style="font-size:18px;font-weight:800;"><%= alternant.prenom %> <%= alternant.nom %></div>
+      <div style="font-size:13px;color:#7A8699;"><%= alternant.poste || '—' %></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div style="background:#F8FAFC;border-radius:11px;padding:14px;">
+      <div style="font-size:11.5px;color:#9AA7B5;font-weight:600;margin-bottom:4px;">E-MAIL</div>
+      <div style="font-size:13.5px;font-weight:600;"><%= alternant.email %></div>
+    </div>
+    <div style="background:#F8FAFC;border-radius:11px;padding:14px;">
+      <div style="font-size:11.5px;color:#9AA7B5;font-weight:600;margin-bottom:4px;">CONTRAT</div>
+      <div style="font-size:13.5px;font-weight:600;"><%= formatDate(alternant.date_debut) %> – <%= formatDate(alternant.date_fin) %></div>
+    </div>
+    <div style="background:#F8FAFC;border-radius:11px;padding:14px;">
+      <div style="font-size:11.5px;color:#9AA7B5;font-weight:600;margin-bottom:4px;">SOCIÉTÉ</div>
+      <div style="font-size:13.5px;font-weight:600;"><%= (alternant.societes && alternant.societes.nom) || '—' %></div>
+    </div>
+  </div>
+
+  <div style="background:#F8FAFC;border-radius:11px;padding:14px;margin-top:14px;">
+    <div style="font-size:11.5px;color:#9AA7B5;font-weight:600;margin-bottom:4px;">HEURES SUPP.</div>
+    <div style="font-size:13.5px;font-weight:700;color:#7A53C1;"><%= totalHeures %> h <span style="font-weight:500;color:#9AA7B5;">(≈ <%= Math.round(totalHeures / HEURES_PAR_JOUR * 10) / 10 %> j)</span></div>
+  </div>
+
+  <form method="POST" action="/alternants/<%= alternant.id %>/eligibilite" style="margin-top:14px;">
+    <button type="submit" class="toggle-row" style="width:100%;border:0;text-align:left;cursor:pointer;">
+      <div>
+        <div style="font-size:13.5px;font-weight:700;">Éligible aux heures supplémentaires</div>
+        <div style="font-size:12px;color:#9AA7B5;margin-top:2px;">Contrôle l'affichage de l'onglet « Mes heures » côté alternant.</div>
+      </div>
+      <span class="toggle <%= alternant.heures_eligible ? 'on' : '' %>"></span>
+    </button>
+  </form>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Congés</h3>
+    <%- include('compteur-conges', { solde, heuresEligible: alternant.heures_eligible }) %>
+  </div>
+  <div class="card">
+    <h3>Heures supplémentaires</h3>
+    <%- include('compteur-heures', { soldeHeures }) %>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Planning</h3>
+  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id }, grille)) %>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Importer un planning (Excel)</h3>
+    <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 10px;">Téléchargez le modèle, complétez-le, puis reuploadez-le ici. Vous pourrez vérifier chaque ligne avant enregistrement.</p>
+    <a href="/files/modele-planning.xlsx" download style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#2E5C8A;margin-bottom:14px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 4v11M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>
+      Télécharger le modèle Excel
+    </a>
+    <form method="POST" action="/alternants/<%= alternant.id %>/planning-import" enctype="multipart/form-data">
+      <div class="upload-zone">
+        <input type="file" name="fichier" accept=".xlsx" required>
+        <span>Fichier Excel (.xlsx), max 5 Mo</span>
+      </div>
+      <button class="btn btn-outline" type="submit" style="width:100%;">Analyser le fichier</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Ajouter une période manuellement</h3>
+    <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 14px;">Si l'import automatique ne convient pas, renseignez directement une période.</p>
+    <form method="POST" action="/planning/periode">
+      <input type="hidden" name="alternant_id" value="<%= alternant.id %>">
+      <input type="hidden" name="retour" value="/alternants?voir=<%= alternant.id %>">
+      <div class="grid-2">
+        <div><label>Du</label><%- include('date-input', { name: 'debut' }) %></div>
+        <div><label>Au</label><%- include('date-input', { name: 'fin' }) %></div>
+      </div>
+      <label>Type</label>
+      <%- include('select-field', { name: 'type', value: 'entreprise', options: [
+        { value: 'entreprise', label: 'Entreprise' },
+        { value: 'ecole', label: 'École' },
+        { value: 'conge', label: 'Congé' },
+        { value: 'recuperation', label: 'Heure de récupération' },
+        { value: 'absent', label: 'Absent' }
+      ] }) %>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" name="jours_ouvres" checked style="width:auto;margin:0;">
+        Jours ouvrés uniquement (exclut samedi/dimanche)
+      </label>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Ajouter au planning</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Modifier la fiche</h3>
+  <form method="POST" action="/alternants/<%= alternant.id %>">
+    <label>Poste</label>
+    <input name="poste" value="<%= alternant.poste || '' %>">
+    <label>Société</label>
+    <%- include('select-field', { name: 'societe_id', value: alternant.societe_id, placeholder: 'Aucune société', options: societes.map(s => ({ value: s.id, label: s.nom })) }) %>
+    <div class="grid-2">
+      <div><label>Début de contrat</label><%- include('date-input', { name: 'date_debut', value: alternant.date_debut }) %></div>
+      <div><label>Fin de contrat</label><%- include('date-input', { name: 'date_fin', value: alternant.date_fin }) %></div>
+    </div>
+    <button class="btn btn-primary" type="submit">Enregistrer</button>
+  </form>
+</div>
+
+<div class="card" style="border-color:#F0DAD0;">
+  <h3 style="color:#9A3D22;">Zone de danger</h3>
+  <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 14px;">
+    Supprime définitivement le compte de <%= alternant.prenom %> <%= alternant.nom %>, ainsi que tous ses congés,
+    heures supplémentaires, fiches de paie, absences école et son planning. Cette action est irréversible.
+  </p>
+  <form method="POST" action="/alternants/<%= alternant.id %>/supprimer"
+    onsubmit="return confirm('Supprimer définitivement ' + '<%= alternant.prenom %> <%= alternant.nom %>' + ' et toutes ses données ? Cette action est irréversible.');">
+    <button class="btn" type="submit" style="background:#C2502E;color:#fff;">Supprimer cet alternant</button>
+  </form>
+</div>

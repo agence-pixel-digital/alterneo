@@ -1,0 +1,10 @@
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+  <span style="font-size:42px;font-weight:800;letter-spacing:-.02em;color:#7A53C1;line-height:1;"><%= soldeHeures.dispo %></span>
+  <span style="font-size:16px;font-weight:700;color:#7A53C1;">heures disponibles</span>
+</div>
+<div class="progress-bar"><div style="width:<%= soldeHeures.acquis > 0 ? Math.min(100, Math.round(soldeHeures.pris / soldeHeures.acquis * 100)) : 0 %>%;background:#7A53C1;"></div></div>
+<div style="display:flex;justify-content:space-between;font-size:13px;">
+  <div><span class="muted">Acquis : </span><strong><%= soldeHeures.acquis %> h</strong></div>
+  <div><span class="muted">Pris : </span><strong><%= soldeHeures.pris %> h</strong></div>
+</div>
+<div style="margin-top:14px;font-size:12px;" class="muted">1 jour de récupération = <%= HEURES_PAR_JOUR %> h décomptées.</div>

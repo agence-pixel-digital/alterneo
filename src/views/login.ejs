@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion - Alternéo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-box">
+      <h2 style="margin:0 0 6px;">Connexion</h2>
+      <p style="color:#6B7A8D;font-size:14px;margin:0 0 24px;">Accédez à votre espace Alternéo.</p>
+      <% if (error) { %><div class="error"><%= error %></div><% } %>
+      <% if (success) { %><div style="background:#E2F3EB;color:#15784F;padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;"><%= success %></div><% } %>
+      <form method="POST" action="/login">
+        <label>Adresse e-mail</label>
+        <input type="email" name="email" required>
+        <label>Mot de passe</label>
+        <input type="password" name="password" required>
+        <div style="text-align:right;margin-top:-6px;margin-bottom:18px;">
+          <a href="/mot-de-passe-oublie" style="font-size:13px;color:#2E5C8A;font-weight:600;">Mot de passe oublié ?</a>
+        </div>
+        <button class="btn btn-primary" style="width:100%;" type="submit">Se connecter</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

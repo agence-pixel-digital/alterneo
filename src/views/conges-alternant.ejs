@@ -1,0 +1,53 @@
+<%- include('partials/header', { title: 'Mes congés', active: 'conges' }) %>
+
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <h3 style="margin:0;">Mon compteur de congés</h3>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter-conge').style.display='flex'">+ Ajouter</button>
+  </div>
+  <%- include('partials/compteur-conges', { solde, heuresEligible: profile.heures_eligible }) %>
+</div>
+
+<div class="card">
+  <h3>Historique</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Dates</th><th>Type</th><th>Jours</th><th>Statut</th></tr>
+    <% conges.slice().sort(function(a, b) {
+      if (a.statut === 'attente' && b.statut !== 'attente') return -1;
+      if (a.statut !== 'attente' && b.statut === 'attente') return 1;
+      return b.date_debut.localeCompare(a.date_debut);
+    }).forEach(function(c) { %>
+      <tr>
+        <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
+        <td class="muted"><%= c.type === 'recuperation' ? 'Récupération' : 'Payé' %></td>
+        <td><%= c.jours %></td>
+        <td><span class="badge badge-<%= c.statut %>"><%= c.statut %></span></td>
+      </tr>
+    <% }); %>
+  </table>
+  </div>
+</div>
+
+<div id="modal-ajouter-conge" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Nouvelle demande</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ajouter-conge').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/conges">
+      <%- include('partials/range-input', { debutName: 'date_debut', finName: 'date_fin' }) %>
+      <% if (profile.heures_eligible) { %>
+        <label>Type de congé</label>
+        <%- include('partials/select-field', { name: 'type', value: 'paye', options: [{ value: 'paye', label: 'Congé payé' }, { value: 'recuperation', label: 'Heure de récupération' }] }) %>
+      <% } %>
+      <label>Commentaire (optionnel)</label>
+      <textarea name="commentaire" rows="3"></textarea>
+      <button class="btn btn-primary" type="submit" style="width:100%;">Envoyer la demande</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

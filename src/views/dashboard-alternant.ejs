@@ -1,0 +1,112 @@
+<%- include('partials/header', { title: 'Tableau de bord', active: 'dashboard' }) %>
+
+<h2>Bonjour <%= profile.prenom %> 👋</h2>
+
+<div class="<%= profile.heures_eligible ? 'grid-4' : 'grid-3' %>">
+  <a href="/conges" class="card" style="display:block;">
+    <div class="stat-label">Congés disponibles</div>
+    <div class="stat-value" style="color:#1F9D6B;"><%= dispo %> j</div>
+  </a>
+  <a href="/conges" class="card" style="display:block;">
+    <div class="stat-label">Demandes en attente</div>
+    <div class="stat-value" style="color:#B7791F;"><%= enAttente %></div>
+  </a>
+  <% if (profile.heures_eligible) { %>
+    <a href="/heures" class="card" style="display:block;">
+      <div class="stat-label">Heures supp. cumulées</div>
+      <div class="stat-value" style="color:#7A53C1;"><%= totalHeures %> h</div>
+    </a>
+  <% } %>
+  <a href="/paie" class="card" style="display:block;">
+    <div class="stat-label">Dernière fiche de paie</div>
+    <div class="stat-value" style="color:#2E5C8A; font-size:20px;">
+      <%= derniereFiche ? formatPeriode(derniereFiche.periode) : 'Aucune' %>
+    </div>
+  </a>
+</div>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:14px;">
+    <h3 style="margin:0;">Planning de l'équipe</h3>
+    <div class="legend">
+      <div class="legend-item"><span class="type-dot dot-entreprise"></span>Entreprise</div>
+      <div class="legend-item"><span class="type-dot dot-ecole"></span>École</div>
+      <div class="legend-item"><span class="type-dot dot-conge"></span>Congé</div>
+      <div class="legend-item"><span class="type-dot dot-recuperation"></span>Récup.</div>
+      <div class="legend-item"><span class="type-dot dot-absent"></span>Absent</div>
+    </div>
+  </div>
+  <% if (equipe.length === 0) { %>
+    <div class="empty-state">Aucun alternant.</div>
+  <% } else { %>
+  <div style="overflow-x:auto;">
+    <div style="display:flex;margin-bottom:8px;padding-left:200px;gap:6px;min-width:600px;">
+      <% equipeJours.forEach(function(j) { %>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:#9AA7B5;font-weight:600;text-transform:uppercase;"><%= j.dow %></div>
+          <div style="font-size:14px;font-weight:700;color:#5B6B7D;"><%= j.num %></div>
+        </div>
+      <% }); %>
+    </div>
+    <% equipe.forEach(function(a) { %>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;min-width:600px;">
+        <div style="width:200px;flex-shrink:0;" class="row-flex">
+          <div class="avatar" style="background:<%= a.avatar_color %>;"><%= (a.prenom[0]+a.nom[0]).toUpperCase() %></div>
+          <div style="min-width:0;overflow:hidden;">
+            <div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= a.prenom %> <%= a.nom %></div>
+            <div style="font-size:11.5px;color:#9AA7B5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= a.poste || '—' %></div>
+          </div>
+        </div>
+        <% equipeJours.forEach(function(j) { %>
+          <% const t = equipePlanningMap[a.id + j.iso]; %>
+          <div class="<%= t ? 'type-'+t : '' %>" style="flex:1;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;<%= !t ? 'background:#F6F8FB;' : '' %>">
+            <% if (t) { %><span class="type-dot dot-<%= t %>" style="margin:0;"></span><% } %>
+          </div>
+        <% }); %>
+      </div>
+    <% }); %>
+  </div>
+  <% } %>
+</div>
+
+<div class="grid-14">
+  <div class="card">
+    <h3>Mes dernières demandes de congés</h3>
+    <% if (mesConges.length === 0) { %>
+      <p style="color:#9AA7B5;">Aucune demande pour l'instant.</p>
+    <% } else { %>
+      <div class="table-scroll">
+      <table>
+        <tr><th>Dates</th><th>Jours</th><th>Statut</th></tr>
+        <% mesConges.forEach(function(c) { %>
+          <tr>
+            <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
+            <td><%= c.jours %></td>
+            <td><span class="badge badge-<%= c.statut %>"><%= c.statut %></span></td>
+          </tr>
+        <% }); %>
+      </table>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h3>Dernière fiche de paie</h3>
+    <% if (!derniereFiche) { %>
+      <div class="empty-state">Aucune fiche déposée.</div>
+    <% } else { %>
+      <div class="row-flex" style="padding:14px 16px;border:1px solid #EDF0F4;border-radius:12px;">
+        <div style="width:42px;height:42px;border-radius:10px;background:#EAF1F8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="1.8"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"></path><path d="M14 3v4h4M8.5 12.5h7M8.5 16h7"></path></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14.5px;font-weight:700;"><%= formatPeriode(derniereFiche.periode) %></div>
+          <div style="font-size:12px;color:#9AA7B5;">Déposée le <%= formatDate(derniereFiche.date_depot) %></div>
+        </div>
+        <a href="/paie/<%= derniereFiche.id %>/telecharger" class="btn btn-outline">Télécharger</a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,42 @@
+<%- include('partials/header', { title: 'Import planning — ' + alternant.prenom + ' ' + alternant.nom, active: 'alternants' }) %>
+
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<% if (ignorees > 0) { %><div class="error"><%= ignorees %> ligne(s) du fichier n'ont pas pu être interprétées et ont été ignorées.</div><% } %>
+
+<div class="card">
+  <h3>Vérifiez les jours détectés avant d'enregistrer</h3>
+  <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 18px;">Corrigez ou décochez les lignes incorrectes avant de valider — rien n'est enregistré tant que vous n'avez pas confirmé.</p>
+
+  <% if (lignes.length > 0) { %>
+    <form method="POST" action="/alternants/<%= alternant.id %>/planning-import/confirmer">
+      <div class="table-scroll">
+      <table>
+        <tr><th></th><th>Date</th><th>Type</th></tr>
+        <% lignes.forEach(function(l, i) { %>
+          <tr>
+            <td><input type="checkbox" name="keep" value="<%= i %>" checked style="margin:0;width:auto;"></td>
+            <td><%- include('partials/date-input', { name: 'date', value: l.date }) %></td>
+            <td style="min-width:170px;">
+              <%- include('partials/select-field', { name: 'type', value: l.type, options: [
+                { value: 'entreprise', label: 'Entreprise' },
+                { value: 'ecole', label: 'École' },
+                { value: 'conge', label: 'Congé' },
+                { value: 'recuperation', label: 'Heure de récupération' },
+                { value: 'absent', label: 'Absent' }
+              ] }) %>
+            </td>
+          </tr>
+        <% }); %>
+      </table>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-primary" type="submit">Confirmer et enregistrer</button>
+        <a href="/alternants?voir=<%= alternant.id %>" class="btn btn-outline">Annuler</a>
+      </div>
+    </form>
+  <% } else { %>
+    <a href="/alternants?voir=<%= alternant.id %>" class="btn btn-outline">Retour à la fiche</a>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

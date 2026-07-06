@@ -1,0 +1,126 @@
+<%- include('partials/header', { title: 'Demandes de congés', active: 'conges' }) %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <h3 style="margin:0;">En attente</h3>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter-conge').style.display='flex'">+ Ajouter</button>
+  </div>
+  <% if (pending.length === 0) { %>
+    <p style="color:#9AA7B5;">Aucune demande en attente. ✓</p>
+  <% } %>
+  <% pending.forEach(function(c) { %>
+    <div style="border:1px solid #EDF0F4;border-radius:12px;padding:16px;margin-bottom:12px;">
+      <strong><%= c.profiles.prenom %> <%= c.profiles.nom %></strong>
+      <% if (c.type === 'recuperation') { %><span class="badge" style="background:#E0F5F8;color:#0E5E66;">Récupération</span><% } %>
+      — <%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %> (<%= c.jours %> j) ·
+      <% if (c.type === 'recuperation') { %>
+        <span class="muted"><%= c.solde.heuresRecupDispo %> h de récupération disponibles</span>
+      <% } else { %>
+        <span class="muted"><%= c.solde.dispo %> j disponibles</span>
+      <% } %>
+      <p style="color:#7A8699;font-size:13px;"><%= c.commentaire || 'Aucun commentaire' %></p>
+      <form method="POST" action="/conges/<%= c.id %>/valider" style="display:inline;">
+        <button class="btn btn-success" type="submit">Valider</button>
+      </form>
+      <form method="POST" action="/conges/<%= c.id %>/refuser" style="display:inline-block;margin-left:8px;">
+        <input name="motif_refus" placeholder="Motif du refus" style="display:inline-block;width:200px;margin:0 8px 0 0;">
+        <button class="btn btn-danger" type="submit">Refuser</button>
+      </form>
+      <button type="button" class="btn btn-outline" style="margin-left:8px;" onclick="ouvrirModalSuppr('<%= c.id %>')">Supprimer</button>
+    </div>
+  <% }); %>
+</div>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px;">
+    <h3 style="margin:0;">Demandes traitées</h3>
+    <form method="GET" action="/conges" class="inline-filter-bar">
+      <div style="width:190px;">
+        <%- include('partials/select-field', {
+          name: 'alt', value: filtreAlt, placeholder: 'Tous les alternants',
+          options: [{ value: '', label: 'Tous les alternants' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+        }) %>
+      </div>
+      <div style="width:150px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois }) %></div>
+      <button class="btn btn-outline" type="submit">Filtrer</button>
+      <% if (filtreAlt || filtreMois) { %><a href="/conges" class="btn btn-outline">Réinitialiser</a><% } %>
+    </form>
+  </div>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Alternant</th><th>Dates</th><th>Type</th><th>Jours</th><th>Statut</th><th>Motif du refus</th><th></th></tr>
+    <% treated.forEach(function(c) { %>
+      <tr>
+        <td><%= c.profiles.prenom %> <%= c.profiles.nom %></td>
+        <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
+        <td class="muted"><%= c.type === 'recuperation' ? 'Récupération' : 'Payé' %></td>
+        <td><%= c.jours %></td>
+        <td><span class="badge badge-<%= c.statut %>"><%= c.statut %></span></td>
+        <td class="muted"><%= c.statut === 'refusee' ? (c.motif_refus || '—') : '—' %></td>
+        <td>
+          <button type="button" class="btn btn-outline" onclick="ouvrirModalSuppr('<%= c.id %>')">Supprimer</button>
+        </td>
+      </tr>
+    <% }); %>
+  </table>
+  </div>
+</div>
+
+<div id="modal-ajouter-conge" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Ajouter un congé</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ajouter-conge').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/planning/periode">
+      <input type="hidden" name="retour" value="/conges">
+      <label>Alternant</label>
+      <%- include('partials/select-field', { name: 'alternant_id', options: alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })) }) %>
+      <div class="grid-2">
+        <div><label>Du</label><%- include('partials/date-input', { name: 'debut' }) %></div>
+        <div><label>Au</label><%- include('partials/date-input', { name: 'fin' }) %></div>
+      </div>
+      <label>Type</label>
+      <%- include('partials/select-field', { name: 'type', value: 'conge', options: [
+        { value: 'entreprise', label: 'Entreprise' },
+        { value: 'ecole', label: 'École' },
+        { value: 'conge', label: 'Congé' },
+        { value: 'recuperation', label: 'Heure de récupération' },
+        { value: 'absent', label: 'Absent' }
+      ] }) %>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" name="jours_ouvres" checked style="width:auto;margin:0;">
+        Jours ouvrés uniquement (exclut samedi/dimanche)
+      </label>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Ajouter</button>
+    </form>
+  </div>
+</div>
+
+<div id="modal-suppr-conge" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Supprimer ce congé</h3>
+      <button type="button" class="modal-close" onclick="fermerModalSuppr()">✕</button>
+    </div>
+    <p style="font-size:13px;color:#7A8699;margin:0 0 18px;">Si des jours de planning étaient marqués « Congé » ou « Récupération » sur cette période, par quoi voulez-vous les remplacer ?</p>
+    <form id="form-suppr-conge" method="POST">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn btn-outline" type="submit" name="remplacement" value="entreprise" style="width:100%;">Remplacer par « Entreprise »</button>
+        <button class="btn btn-outline" type="submit" name="remplacement" value="ecole" style="width:100%;">Remplacer par « École »</button>
+        <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer sans remplacer</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  function ouvrirModalSuppr(id) {
+    document.getElementById('form-suppr-conge').action = '/conges/' + id + '/supprimer';
+    document.getElementById('modal-suppr-conge').style.display = 'flex';
+  }
+  function fermerModalSuppr() {
+    document.getElementById('modal-suppr-conge').style.display = 'none';
+  }
+</script>
+
+<%- include('partials/footer') %>

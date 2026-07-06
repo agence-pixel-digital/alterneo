@@ -1,0 +1,39 @@
+<%- include('partials/header', { title: 'Mes heures supplémentaires', active: 'heures' }) %>
+
+<% if (!eligible) { %>
+  <div class="card">
+    <p style="color:#9AA7B5;">Vous n'êtes pas éligible aux heures supplémentaires. Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.</p>
+  </div>
+<% } else { %>
+  <div class="card" style="display:flex;align-items:center;gap:24px;padding:28px;">
+    <div style="width:64px;height:64px;border-radius:16px;background:#EFE9F9;display:flex;align-items:center;justify-content:center;">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7A53C1" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
+    </div>
+    <div>
+      <div class="stat-label" style="margin-bottom:4px;">Total des heures supplémentaires cumulées</div>
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <span style="font-size:40px;font-weight:800;letter-spacing:-.02em;color:#7A53C1;line-height:1;"><%= total %></span>
+        <span style="font-size:18px;font-weight:700;color:#7A53C1;">heures</span>
+      </div>
+      <div style="font-size:12.5px;color:#9AA7B5;margin-top:4px;">soit ≈ <%= Math.round(total / HEURES_PAR_JOUR * 10) / 10 %> jour(s) de travail (<%= HEURES_PAR_JOUR %>h/jour)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Historique des mouvements</h3>
+    <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 16px;">Consultation en lecture seule. Les heures sont ajoutées par l'administrateur.</p>
+    <% if (historique.length === 0) { %>
+      <div class="empty-state">Aucun mouvement enregistré.</div>
+    <% } else { %>
+      <% historique.forEach(function(m) { %>
+        <div class="list-row">
+          <div style="width:120px;font-size:13px;color:#5B6B7D;"><%= formatDate(m.date) %></div>
+          <div style="flex:1;font-size:13.5px;"><%= m.motif || '—' %></div>
+          <div style="font-size:14px;font-weight:700;color:<%= m.heures >= 0 ? '#1F8E5F' : '#C2502E' %>;"><%= m.heures >= 0 ? '+' : '' %><%= m.heures %> h</div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

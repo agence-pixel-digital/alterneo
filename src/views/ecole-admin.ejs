@@ -1,0 +1,83 @@
+<%- include('partials/header', { title: 'Absences école', active: 'ecole' }) %>
+
+<% const motifLabels = { maladie: 'Maladie', justifie_ecole: "Justifié auprès de l'école", sans_solde: 'Sans solde', conge_paye: 'Congé payé' }; %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
+    <h3 style="margin:0;">Absences école signalées</h3>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter-absence').style.display='flex'">+ Ajouter</button>
+  </div>
+  <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 14px;">Jours déclarés où les alternants n'ont pas pu assister aux cours.</p>
+  <form method="GET" action="/ecole" class="inline-filter-bar" style="margin-bottom:18px;">
+    <div style="width:190px;">
+      <%- include('partials/select-field', {
+        name: 'alt', value: filtreAlt, placeholder: 'Tous les alternants',
+        options: [{ value: '', label: 'Tous les alternants' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+      }) %>
+    </div>
+    <div style="width:150px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois }) %></div>
+    <button class="btn btn-outline" type="submit">Filtrer</button>
+    <% if (filtreAlt || filtreMois) { %><a href="/ecole" class="btn btn-outline">Réinitialiser</a><% } %>
+  </form>
+  <% if (absences.length === 0) { %>
+    <div class="empty-state">Aucune absence signalée.</div>
+  <% } else { %>
+    <% absences.forEach(function(ab) { %>
+      <div class="list-row">
+        <div class="avatar" style="background:<%= ab.profiles.avatar_color %>;">
+          <%= (ab.profiles.prenom[0] + ab.profiles.nom[0]).toUpperCase() %>
+        </div>
+        <div style="flex:1.2;font-size:13.5px;font-weight:600;"><%= ab.profiles.prenom %> <%= ab.profiles.nom %></div>
+        <div style="flex:1;font-size:13px;color:#5B6B7D;"><%= formatDate(ab.date) %></div>
+        <div style="flex:.6;font-size:13px;color:#5B6B7D;"><%= ab.heures ? ab.heures + 'h (' + Math.round(ab.heures / HEURES_PAR_JOUR * 10) / 10 + ' j)' : '—' %></div>
+        <div style="flex:1.3;font-size:12.5px;color:#9AA7B5;"><%= motifLabels[ab.motif_type] || ab.motif_type %></div>
+        <div style="flex:1.6;font-size:12.5px;color:#9AA7B5;"><%= ab.motif || '—' %></div>
+        <% if (ab.justificatif_url) { %>
+          <a href="/ecole/<%= ab.id %>/justificatif" style="font-size:12px;color:#2E5C8A;font-weight:600;">Certificat</a>
+        <% } %>
+        <form method="POST" action="/ecole/<%= ab.id %>/supprimer" onsubmit="return confirm('Supprimer définitivement cette absence ?');">
+          <button class="btn btn-outline" type="submit">Supprimer</button>
+        </form>
+      </div>
+    <% }); %>
+  <% } %>
+</div>
+
+<div id="modal-ajouter-absence" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Déclarer une absence</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ajouter-absence').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/ecole/ajouter" enctype="multipart/form-data">
+      <label>Alternant</label>
+      <%- include('partials/select-field', { name: 'alternant_id', options: alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })) }) %>
+      <div class="grid-2">
+        <div><label>Date</label><%- include('partials/date-input', { name: 'date' }) %></div>
+        <div><label>Nombre d'heures</label><input type="number" name="heures" step="0.5" min="0" placeholder="Laisser vide = journée complète (<%= HEURES_PAR_JOUR %>h)"></div>
+      </div>
+      <label>Motif</label>
+      <%- include('partials/select-field', {
+        name: 'motif_type', id: 'motif_type_admin', placeholder: 'Sélectionner un motif',
+        options: Object.keys(motifLabels).map(k => ({ value: k, label: motifLabels[k] }))
+      }) %>
+      <div id="bloc-justificatif-admin" style="display:none;">
+        <label>Certificat médical (optionnel)</label>
+        <div class="upload-zone">
+          <input type="file" name="justificatif" accept="application/pdf,image/png,image/jpeg">
+          <span>PDF ou photo, max 5 Mo</span>
+        </div>
+      </div>
+      <label>Précision (optionnel)</label>
+      <input name="motif" placeholder="ex. Grève des transports…">
+      <button class="btn btn-primary" type="submit" style="width:100%;">Déclarer l'absence</button>
+    </form>
+    <script>
+      document.getElementById('motif_type_admin').addEventListener('change', function () {
+        document.getElementById('bloc-justificatif-admin').style.display = this.value === 'maladie' ? 'block' : 'none';
+      });
+    </script>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

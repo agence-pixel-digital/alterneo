@@ -1,0 +1,50 @@
+<%- include('partials/header', { title: 'Planning — ' + monthLabel, active: 'planning' }) %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:14px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <a href="/planning?mois=<%= prevMois %>" class="btn btn-outline">‹</a>
+      <span style="font-size:15px;font-weight:700;min-width:150px;text-align:center;"><%= monthLabel %></span>
+      <a href="/planning?mois=<%= nextMois %>" class="btn btn-outline">›</a>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="type-dot dot-entreprise"></span>Entreprise</div>
+      <div class="legend-item"><span class="type-dot dot-ecole"></span>École</div>
+      <div class="legend-item"><span class="type-dot dot-conge"></span>Congé</div>
+      <div class="legend-item"><span class="type-dot dot-recuperation"></span>Récup.</div>
+      <div class="legend-item"><span class="type-dot dot-absent"></span>Absent</div>
+    </div>
+  </div>
+
+  <% if (lignes.length === 0) { %>
+    <div class="empty-state">Aucun alternant pour l'instant.</div>
+  <% } else { %>
+    <div style="overflow-x:auto;">
+      <table class="planning-global-table">
+        <tr>
+          <th class="planning-global-name-col">Alternant</th>
+          <% jours.forEach(function(j) { %>
+            <th class="<%= j.isWeekend ? 'weekend' : '' %>"><%= j.day %></th>
+          <% }); %>
+        </tr>
+        <% lignes.forEach(function(l) { %>
+          <tr>
+            <td class="planning-global-name-col">
+              <a href="/alternants?voir=<%= l.alternant.id %>" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;">
+                <span class="avatar" style="width:24px;height:24px;font-size:10px;border-radius:7px;background:<%= l.alternant.avatar_color %>;"><%= (l.alternant.prenom[0] + l.alternant.nom[0]).toUpperCase() %></span>
+                <%= l.alternant.prenom %> <%= l.alternant.nom %>
+              </a>
+            </td>
+            <% l.cellules.forEach(function(c) { %>
+              <td class="planning-global-cell <%= c.type ? 'type-' + c.type : (c.isWeekend ? 'weekend' : '') %>"
+                title="<%= c.type ? ({ entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récupération', absent:'Absent' })[c.type] : '' %>"
+              >&nbsp;</td>
+            <% }); %>
+          </tr>
+        <% }); %>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

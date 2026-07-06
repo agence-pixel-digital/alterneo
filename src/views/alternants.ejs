@@ -1,0 +1,66 @@
+<%- include('partials/header', { title: 'Gestion des alternants', active: 'alternants' }) %>
+
+<% if (error && !showModal) { %><div class="error"><%= error %></div><% } %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+    <h3 style="margin:0;">Alternants</h3>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter').style.display='flex'">+ Ajouter un alternant</button>
+  </div>
+  <% if (alternants.length === 0) { %>
+    <div class="empty-state">Aucun alternant pour l'instant.</div>
+  <% } else { %>
+    <div class="alternant-grid">
+      <% alternants.forEach(function(a) { %>
+        <a href="/alternants?voir=<%= a.id %>" class="alternant-tile <%= selected && selected.alternant.id === a.id ? 'active' : '' %>">
+          <div class="avatar" style="background:<%= a.avatar_color %>;"><%= (a.prenom[0] + a.nom[0]).toUpperCase() %></div>
+          <div>
+            <div class="name"><%= a.prenom %> <%= a.nom %></div>
+            <div class="role"><%= a.poste || 'Alternant' %></div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
+<% if (selected) { %>
+  <%- include('partials/fiche-alternant', Object.assign({ societes }, selected)) %>
+<% } %>
+
+<div id="modal-ajouter" class="modal-overlay" style="display:<%= showModal ? 'flex' : 'none' %>;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Ajouter un alternant</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ajouter').style.display='none'">✕</button>
+    </div>
+    <% if (error) { %><div class="error"><%= error %></div><% } %>
+    <form method="POST" action="/alternants" enctype="multipart/form-data">
+      <div class="grid-2">
+        <div><label>Prénom</label><input name="prenom" required></div>
+        <div><label>Nom</label><input name="nom" required></div>
+      </div>
+      <label>E-mail</label>
+      <input type="email" name="email" required>
+      <label>Poste</label>
+      <input name="poste">
+      <label>Société</label>
+      <%- include('partials/select-field', { name: 'societe_id', placeholder: 'Aucune société', options: societes.map(s => ({ value: s.id, label: s.nom })) }) %>
+      <div class="grid-2">
+        <div><label>Début de contrat</label><%- include('partials/date-input', { name: 'date_debut' }) %></div>
+        <div><label>Fin de contrat</label><%- include('partials/date-input', { name: 'date_fin' }) %></div>
+      </div>
+      <label>Planning initial (optionnel)</label>
+      <p style="font-size:12px;color:#9AA7B5;margin:0 0 8px;">
+        <a href="/files/modele-planning.xlsx" download style="color:#2E5C8A;font-weight:600;">Télécharger le modèle Excel</a> — vous pourrez vérifier chaque ligne avant enregistrement, ou l'importer plus tard depuis la fiche.
+      </p>
+      <div class="upload-zone">
+        <input type="file" name="fichier_planning" accept=".xlsx">
+        <span>Fichier Excel (.xlsx), max 5 Mo</span>
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Créer l'alternant</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

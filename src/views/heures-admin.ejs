@@ -1,0 +1,81 @@
+<%- include('partials/header', { title: 'Heures supplémentaires', active: 'heures' }) %>
+<% const totalFiltre = historique.reduce(function(s, m) { return s + Number(m.heures); }, 0); %>
+<% const retour = '/heures?' + (filtreAlt ? 'alt=' + filtreAlt + '&' : '') + (filtreMois ? 'mois=' + filtreMois : ''); %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <h3 style="margin:0;">Heures supplémentaires</h3>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter-heures').style.display='flex'">+ Ajouter</button>
+  </div>
+  <% if (alternants.length === 0) { %>
+    <div class="empty-state">Aucun alternant pour l'instant.</div>
+  <% } else { %>
+    <div class="alternant-grid">
+      <% alternants.forEach(function(a) { %>
+        <a href="/heures?alt=<%= a.id %>" class="alternant-tile <%= filtreAlt === a.id ? 'active' : '' %>">
+          <div class="avatar" style="background:<%= a.avatar_color %>;"><%= (a.prenom[0] + a.nom[0]).toUpperCase() %></div>
+          <div class="name"><%= a.prenom %> <%= a.nom %></div>
+          <div style="font-size:16px;font-weight:800;color:#7A53C1;line-height:1;"><%= totaux[a.id] || 0 %> h</div>
+          <div class="role">≈ <%= Math.round((totaux[a.id] || 0) / HEURES_PAR_JOUR * 10) / 10 %> j</div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:4px;">
+    <h3 style="margin:0;">Historique</h3>
+    <form method="GET" action="/heures" class="inline-filter-bar">
+      <div style="width:190px;">
+        <%- include('partials/select-field', {
+          name: 'alt', value: filtreAlt, placeholder: 'Tous les alternants',
+          options: [{ value: '', label: 'Tous les alternants' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+        }) %>
+      </div>
+      <div style="width:150px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois }) %></div>
+      <button class="btn btn-outline" type="submit">Filtrer</button>
+      <% if (filtreAlt || filtreMois) { %><a href="/heures" class="btn btn-outline">Réinitialiser</a><% } %>
+    </form>
+  </div>
+  <div style="font-size:13px;color:#9AA7B5;margin-bottom:14px;">Total : <strong style="color:#7A53C1;"><%= Math.round(totalFiltre * 10) / 10 %> h</strong> (≈ <%= Math.round(totalFiltre / HEURES_PAR_JOUR * 10) / 10 %> j)</div>
+  <% if (historique.length === 0) { %>
+    <div class="empty-state">Aucun mouvement enregistré.</div>
+  <% } else { %>
+    <% historique.forEach(function(m) { %>
+      <div class="list-row">
+        <div class="avatar" style="background:<%= m.profiles.avatar_color %>;"><%= (m.profiles.prenom[0] + m.profiles.nom[0]).toUpperCase() %></div>
+        <div style="flex:1;font-size:13.5px;font-weight:600;"><%= m.profiles.prenom %> <%= m.profiles.nom %></div>
+        <div style="width:110px;font-size:13px;color:#5B6B7D;"><%= formatDate(m.date) %></div>
+        <div style="flex:1.4;font-size:13.5px;color:#7A8699;"><%= m.motif || '—' %></div>
+        <div style="font-size:14px;font-weight:700;color:<%= m.heures >= 0 ? '#1F8E5F' : '#C2502E' %>;"><%= m.heures >= 0 ? '+' : '' %><%= m.heures %> h</div>
+        <form method="POST" action="/heures/<%= m.id %>/supprimer" onsubmit="return confirm('Supprimer ce mouvement ?');">
+          <input type="hidden" name="retour" value="<%= retour %>">
+          <button class="btn btn-outline" type="submit">Supprimer</button>
+        </form>
+      </div>
+    <% }); %>
+  <% } %>
+</div>
+
+<div id="modal-ajouter-heures" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Ajouter des heures</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ajouter-heures').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/heures">
+      <label>Alternant</label>
+      <%- include('partials/select-field', { name: 'alternant_id', value: filtreAlt, options: alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })) }) %>
+      <div class="grid-2">
+        <div><label>Heures (+/−)</label><input name="heures" placeholder="ex. 4" required></div>
+        <div><label>Date</label><%- include('partials/date-input', { name: 'date' }) %></div>
+      </div>
+      <label>Motif (optionnel)</label>
+      <input name="motif" placeholder="ex. Mise en production">
+      <button class="btn btn-primary" type="submit" style="width:100%;">Ajouter au compteur</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

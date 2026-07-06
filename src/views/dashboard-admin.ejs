@@ -1,0 +1,105 @@
+<%- include('partials/header', { title: 'Tableau de bord', active: 'dashboard' }) %>
+
+<div class="grid-3">
+  <a href="/alternants" class="card" style="display:block;">
+    <div class="stat-label">Alternants actifs</div>
+    <div class="stat-value" style="color:#2E5C8A;"><%= alternants.length %></div>
+  </a>
+  <a href="/conges" class="card" style="display:block;">
+    <div class="stat-label">Congés en attente</div>
+    <div class="stat-value" style="color:#B7791F;"><%= pending.length %></div>
+  </a>
+  <a href="/paie" class="card" style="display:block;">
+    <div class="stat-label">Fiches de paie déposées</div>
+    <div class="stat-value" style="color:#1F9D6B;"><%= recentPaie.length %></div>
+  </a>
+</div>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:14px;">
+    <h3 style="margin:0;">Planning de la semaine</h3>
+    <div class="legend">
+      <div class="legend-item"><span class="type-dot dot-entreprise"></span>Entreprise</div>
+      <div class="legend-item"><span class="type-dot dot-ecole"></span>École</div>
+      <div class="legend-item"><span class="type-dot dot-conge"></span>Congé</div>
+      <div class="legend-item"><span class="type-dot dot-recuperation"></span>Récup.</div>
+      <div class="legend-item"><span class="type-dot dot-absent"></span>Absent</div>
+    </div>
+  </div>
+  <% if (alternants.length === 0) { %>
+    <div class="empty-state">Aucun alternant.</div>
+  <% } else { %>
+  <div style="overflow-x:auto;">
+    <div style="display:flex;margin-bottom:8px;padding-left:200px;gap:6px;min-width:600px;">
+      <% jours.forEach(function(j) { %>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:#9AA7B5;font-weight:600;text-transform:uppercase;"><%= j.dow %></div>
+          <div style="font-size:14px;font-weight:700;color:#5B6B7D;"><%= j.num %></div>
+        </div>
+      <% }); %>
+    </div>
+    <% alternants.forEach(function(a) { %>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;min-width:600px;">
+        <div style="width:200px;flex-shrink:0;" class="row-flex">
+          <div class="avatar" style="background:<%= a.avatar_color %>;"><%= (a.prenom[0]+a.nom[0]).toUpperCase() %></div>
+          <div style="min-width:0;overflow:hidden;">
+            <div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= a.prenom %> <%= a.nom %></div>
+            <div style="font-size:11.5px;color:#9AA7B5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= a.poste || '—' %></div>
+          </div>
+        </div>
+        <% jours.forEach(function(j) { %>
+          <% const t = planningMap[a.id + j.iso]; %>
+          <div class="<%= t ? 'type-'+t : '' %>" style="flex:1;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;<%= !t ? 'background:#F6F8FB;' : '' %>">
+            <% if (t) { %><span class="type-dot dot-<%= t %>" style="margin:0;"></span><% } %>
+          </div>
+        <% }); %>
+      </div>
+    <% }); %>
+  </div>
+  <% } %>
+</div>
+
+<div class="grid-14">
+  <div class="card">
+    <h3>Demandes de congés en attente</h3>
+    <% if (pending.length === 0) { %>
+      <p style="color:#9AA7B5;">Aucune demande en attente.</p>
+    <% } else { %>
+      <div class="table-scroll">
+      <table>
+        <tr><th>Alternant</th><th>Dates</th><th>Jours</th><th></th></tr>
+        <% pending.forEach(function(c) { %>
+          <tr>
+            <td><%= c.profiles.prenom %> <%= c.profiles.nom %></td>
+            <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
+            <td><%= c.jours %></td>
+            <td><a href="/conges" class="btn btn-outline">Traiter</a></td>
+          </tr>
+        <% }); %>
+      </table>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h3>Derniers dépôts de paie</h3>
+    <% if (recentPaie.length === 0) { %>
+      <div class="empty-state">Aucun dépôt pour l'instant.</div>
+    <% } else { %>
+      <% recentPaie.forEach(function(p) { %>
+        <div class="list-row">
+          <div class="avatar" style="width:32px;height:32px;font-size:11px;background:<%= p.profiles.avatar_color || '#2E5C8A' %>;">
+            <%= (p.profiles.prenom[0] + p.profiles.nom[0]).toUpperCase() %>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;"><%= p.profiles.prenom %> <%= p.profiles.nom %></div>
+            <div style="font-size:11.5px;color:#9AA7B5;"><%= formatPeriode(p.periode) %></div>
+          </div>
+          <div style="font-size:11.5px;color:#9AA7B5;"><%= formatDate(p.date_depot) %></div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

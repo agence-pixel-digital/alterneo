@@ -1,0 +1,40 @@
+<div id="planning-calendar">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:14px;">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <% const sep = baseUrl.includes('?') ? '&' : '?'; %>
+    <a href="<%= baseUrl %><%= sep %>mois=<%= prevMois %>#planning-calendar" class="btn btn-outline">‹</a>
+    <span style="font-size:15px;font-weight:700;min-width:150px;text-align:center;"><%= monthLabel %></span>
+    <a href="<%= baseUrl %><%= sep %>mois=<%= nextMois %>#planning-calendar" class="btn btn-outline">›</a>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="type-dot dot-entreprise"></span>Entreprise</div>
+    <div class="legend-item"><span class="type-dot dot-ecole"></span>École</div>
+    <div class="legend-item"><span class="type-dot dot-conge"></span>Congé</div>
+    <div class="legend-item"><span class="type-dot dot-recuperation"></span>Récup.</div>
+    <div class="legend-item"><span class="type-dot dot-absent"></span>Absent</div>
+  </div>
+</div>
+
+<div class="calendar-grid" style="margin-bottom:8px;">
+  <% ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].forEach(function(d) { %>
+    <div style="text-align:center;font-size:11px;font-weight:700;color:#9AA7B5;text-transform:uppercase;"><%= d %></div>
+  <% }); %>
+</div>
+
+<% weeks.forEach(function(week) { %>
+  <div class="calendar-grid" style="margin-bottom:8px;">
+    <% week.forEach(function(cell) { %>
+      <% if (!cell) { %>
+        <div class="calendar-cell empty"></div>
+      <% } else { %>
+        <div class="calendar-cell <%= !cell.inContract ? 'out-of-contract' : (cell.type ? 'type-'+cell.type : '') %> <%= cell.today ? 'today' : '' %>">
+          <span class="num"><%= cell.day %></span>
+          <% if (cell.type) { %>
+            <span class="tag"><span class="type-dot dot-<%= cell.type %>"></span><%= { entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récup.', absent:'Absent' }[cell.type] %></span>
+          <% } %>
+        </div>
+      <% } %>
+    <% }); %>
+  </div>
+<% }); %>
+</div>
