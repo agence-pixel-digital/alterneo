@@ -11,7 +11,7 @@
     <form method="POST" action="/alternants/<%= alternant.id %>/planning-import/confirmer">
       <div class="table-scroll">
       <table>
-        <tr><th></th><th>Date</th><th>Type</th></tr>
+        <tr><th></th><th>Date</th><th>Type</th><th>Modalité</th></tr>
         <% lignes.forEach(function(l, i) { %>
           <tr>
             <td><input type="checkbox" name="keep" value="<%= i %>" checked style="margin:0;width:auto;"></td>
@@ -23,6 +23,12 @@
                 { value: 'conge', label: 'Congé' },
                 { value: 'recuperation', label: 'Heure de récupération' },
                 { value: 'absent', label: 'Absent' }
+              ] }) %>
+            </td>
+            <td style="min-width:160px;">
+              <%- include('partials/select-field', { name: 'modalite', value: l.modalite || '', placeholder: '—', options: [
+                { value: 'presentiel', label: 'Présentiel' },
+                { value: 'distanciel', label: 'Distanciel' }
               ] }) %>
             </td>
           </tr>

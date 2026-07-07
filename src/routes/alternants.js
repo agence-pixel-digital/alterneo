@@ -7,6 +7,7 @@ const { supabaseAdmin, supabaseAnon } = require('../supabaseClient');
 const { calculerAcquis } = require('../lib/conges');
 const { buildMonthGrid } = require('../lib/planningGrid');
 const { parseExcelPlanning } = require('../lib/planningExcel');
+const { iso } = require('../lib/dates');
 
 const EXCEL_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const uploadPlanning = multer({
@@ -19,7 +20,7 @@ async function chargerFiche(db, id, moisParam) {
   const { data: alternant } = await db.from('profiles').select('*, societes(nom)').eq('id', id).single();
   if (!alternant) return null;
 
-  const mois = moisParam || new Date().toISOString().slice(0, 7);
+  const mois = moisParam || iso(new Date()).slice(0, 7);
   const [y, m] = mois.split('-').map(Number);
   const monthStart = `${y}-${String(m).padStart(2, '0')}-01`;
   const lastDay = new Date(y, m, 0).getDate();
@@ -28,7 +29,7 @@ async function chargerFiche(db, id, moisParam) {
   const [{ data: congesValidees }, { data: heures }, { data: planningRows }] = await Promise.all([
     db.from('conges').select('jours').eq('alternant_id', id).eq('statut', 'validee'),
     db.from('heures_supplementaires').select('heures').eq('alternant_id', id),
-    db.from('planning').select('date,type,commentaire').eq('alternant_id', id).gte('date', monthStart).lte('date', monthEnd)
+    db.from('planning').select('date,type,commentaire,modalite').eq('alternant_id', id).gte('date', monthStart).lte('date', monthEnd)
   ]);
   const pris = (congesValidees || []).reduce((s, c) => s + Number(c.jours), 0);
   const acquis = calculerAcquis(alternant.date_debut, alternant.date_fin);

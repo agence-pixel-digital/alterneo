@@ -18,6 +18,14 @@ function normalizeType(raw) {
   return TYPES_MAP[key] || null;
 }
 
+function normalizeModalite(raw) {
+  if (!raw) return null;
+  const key = stripAccents(String(raw).trim().toLowerCase());
+  if (key === 'presentiel') return 'presentiel';
+  if (key === 'distanciel') return 'distanciel';
+  return null;
+}
+
 function normalizeDate(raw) {
   if (!raw) return null;
   if (raw instanceof Date && !isNaN(raw)) {
@@ -46,8 +54,9 @@ function parseExcelPlanning(buffer) {
     if (!row || row.length === 0) return;
     const date = normalizeDate(row[0]);
     const type = normalizeType(row[1]);
+    const modalite = type === 'entreprise' ? normalizeModalite(row[2]) : null;
     if (!date && !type) return; // ligne vide ou en-tête
-    if (date && type) lignes.push({ date, type });
+    if (date && type) lignes.push({ date, type, modalite });
     else ignorees++;
   });
   return { lignes, ignorees };

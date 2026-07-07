@@ -33,12 +33,16 @@
             <span class="num"><%= cell.day %></span>
             <button type="button" class="day-note-btn <%= cell.commentaire ? 'has-note' : '' %>"
               data-date="<%= cell.key %>" data-date-fr="<%= formatDate(cell.key) %>" data-commentaire="<%= cell.commentaire || '' %>"
-              onclick="event.stopPropagation(); ouvrirModalCommentaireJour(this);" title="Note du jour">
+              onclick="if(!window.__calendarSelectionMode){event.stopPropagation();ouvrirModalCommentaireJour(this);}" title="Note du jour">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
             </button>
           </div>
           <% if (cell.type) { %>
-            <span class="tag"><span class="type-dot dot-<%= cell.type %>"></span><%= { entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récup.', absent:'Absent', ferie:'Férié' }[cell.type] %></span>
+            <span class="tag"><span class="type-dot dot-<%= cell.type %>"></span><%= { entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récup.', absent:'Absent', ferie:'Férié' }[cell.type] %><%= cell.modalite ? ' · ' + (cell.modalite === 'presentiel' ? 'Présentiel' : 'Distanciel') : '' %></span>
+          <% } %>
+          <% if (cell.commentaire) { %>
+            <div class="day-note-preview" data-date="<%= cell.key %>" data-date-fr="<%= formatDate(cell.key) %>" data-commentaire="<%= cell.commentaire %>"
+              onclick="if(!window.__calendarSelectionMode){event.stopPropagation();ouvrirModalCommentaireJour(this);}" title="<%= cell.commentaire %>"><%= cell.commentaire %></div>
           <% } %>
         </div>
       <% } %>

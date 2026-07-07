@@ -29,7 +29,8 @@ function buildGanttData(missions, fallbackProfile) {
     const offset = jours(min, m.date_debut);
     const duree = jours(m.date_debut, m.date_fin) + 1;
     byAlternant[m.alternant_id].items.push({
-      titre: m.titre, date_debut: m.date_debut, date_fin: m.date_fin,
+      id: m.id, alternantId: m.alternant_id, titre: m.titre, description: m.description,
+      date_debut: m.date_debut, date_fin: m.date_fin,
       leftPct: Math.max(0, (offset / totalDays) * 100),
       widthPct: Math.max(2, (duree / totalDays) * 100)
     });
@@ -45,7 +46,18 @@ function buildGanttData(missions, fallbackProfile) {
     cursor.setMonth(cursor.getMonth() + 1);
   }
 
-  return { lignes: Object.values(byAlternant), markers };
+  // Repères hebdomadaires (un trait discret chaque lundi) pour bien distinguer les semaines.
+  const semaines = [];
+  const wCursor = new Date(min);
+  while (wCursor <= new Date(max)) {
+    if (wCursor.getDay() === 1) {
+      const offset = jours(min, wCursor.toISOString().slice(0, 10));
+      semaines.push({ leftPct: (offset / totalDays) * 100 });
+    }
+    wCursor.setDate(wCursor.getDate() + 1);
+  }
+
+  return { lignes: Object.values(byAlternant), markers, semaines };
 }
 
 module.exports = { buildGanttData };

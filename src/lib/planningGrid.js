@@ -1,4 +1,5 @@
 const { estFerie } = require('./joursFeries');
+const { iso } = require('./dates');
 
 const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -6,15 +7,15 @@ const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juill
 // des lignes de planning déjà chargées, pour un affichage en lecture seule.
 function buildMonthGrid(rows, profile, moisParam) {
   const today = new Date();
-  const [y, m] = (moisParam || today.toISOString().slice(0, 7)).split('-').map(Number);
+  const [y, m] = (moisParam || iso(today).slice(0, 7)).split('-').map(Number);
 
   const byDate = {};
-  (rows || []).forEach(r => { byDate[r.date] = { type: r.type, commentaire: r.commentaire }; });
+  (rows || []).forEach(r => { byDate[r.date] = { type: r.type, commentaire: r.commentaire, modalite: r.modalite }; });
 
   const lastDay = new Date(y, m, 0).getDate();
   const first = new Date(y, m - 1, 1);
   const startDow = (first.getDay() + 6) % 7; // Lundi = 0
-  const todayKey = today.toISOString().slice(0, 10);
+  const todayKey = iso(today);
 
   const weeks = [];
   let week = new Array(startDow).fill(null);
@@ -23,7 +24,7 @@ function buildMonthGrid(rows, profile, moisParam) {
     const inContract = (!profile.date_debut || key >= profile.date_debut) && (!profile.date_fin || key <= profile.date_fin);
     const info = byDate[key] || {};
     const type = estFerie(key) ? 'ferie' : (info.type || null);
-    week.push({ day: d, key, type, commentaire: info.commentaire || null, inContract, today: key === todayKey });
+    week.push({ day: d, key, type, commentaire: info.commentaire || null, modalite: info.modalite || null, inContract, today: key === todayKey });
     if (week.length === 7) { weeks.push(week); week = []; }
   }
   if (week.length) { while (week.length < 7) week.push(null); weeks.push(week); }
@@ -43,13 +44,13 @@ function buildMonthGrid(rows, profile, moisParam) {
 // Construit une grille "tous les alternants x jours du mois" en une seule
 // vue, pour l'onglet Planning de l'admin.
 function buildGlobalMonthGrid(alternants, rows, moisParam) {
-  const [y, m] = (moisParam || new Date().toISOString().slice(0, 7)).split('-').map(Number);
+  const [y, m] = (moisParam || iso(new Date()).slice(0, 7)).split('-').map(Number);
   const lastDay = new Date(y, m, 0).getDate();
 
   const byAlternant = {};
   (rows || []).forEach(r => {
     if (!byAlternant[r.alternant_id]) byAlternant[r.alternant_id] = {};
-    byAlternant[r.alternant_id][r.date] = r.type;
+    byAlternant[r.alternant_id][r.date] = { type: r.type, modalite: r.modalite };
   });
 
   const jours = [];
@@ -61,7 +62,10 @@ function buildGlobalMonthGrid(alternants, rows, moisParam) {
 
   const lignes = alternants.map(a => ({
     alternant: a,
-    cellules: jours.map(j => ({ day: j.day, isWeekend: j.isWeekend, type: j.ferie ? 'ferie' : ((byAlternant[a.id] || {})[j.key] || null) }))
+    cellules: jours.map(j => {
+      const info = (byAlternant[a.id] || {})[j.key] || {};
+      return { day: j.day, isWeekend: j.isWeekend, type: j.ferie ? 'ferie' : (info.type || null), modalite: info.modalite || null };
+    })
   }));
 
   const prevM = m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 };

@@ -5,7 +5,7 @@ const { requireAdmin } = require('../middleware');
 const { supabaseAdmin } = require('../supabaseClient');
 const { parseExcelPlanning } = require('../lib/planningExcel');
 const { buildMonthGrid, buildGlobalMonthGrid } = require('../lib/planningGrid');
-const { joursOuvresEntre } = require('../lib/dates');
+const { joursOuvresEntre, iso } = require('../lib/dates');
 const { deduireRecuperation } = require('../lib/heuresSupp');
 const { estFerie } = require('../lib/joursFeries');
 
@@ -19,7 +19,7 @@ const upload = multer({
 });
 
 router.get('/planning', async (req, res) => {
-  const moisParam = req.query.mois || new Date().toISOString().slice(0, 7);
+  const moisParam = req.query.mois || iso(new Date()).slice(0, 7);
   const [y, m] = moisParam.split('-').map(Number);
   const monthStart = `${y}-${String(m).padStart(2, '0')}-01`;
   const lastDay = new Date(y, m, 0).getDate();
@@ -28,25 +28,26 @@ router.get('/planning', async (req, res) => {
   if (req.profile.role === 'admin') {
     const [{ data: alternants }, { data: rows }] = await Promise.all([
       req.db.from('profiles').select('*').eq('role', 'alternant').order('nom'),
-      req.db.from('planning').select('alternant_id,date,type').gte('date', monthStart).lte('date', monthEnd)
+      req.db.from('planning').select('alternant_id,date,type,modalite').gte('date', monthStart).lte('date', monthEnd)
     ]);
     return res.render('planning-admin', buildGlobalMonthGrid(alternants || [], rows || [], moisParam));
   }
 
   const profile = req.profile;
-  const { data: rows } = await req.db.from('planning').select('date,type,commentaire').eq('alternant_id', profile.id).gte('date', monthStart).lte('date', monthEnd);
+  const { data: rows } = await req.db.from('planning').select('date,type,commentaire,modalite').eq('alternant_id', profile.id).gte('date', monthStart).lte('date', monthEnd);
   res.render('planning-alternant', Object.assign({ alternantId: profile.id }, buildMonthGrid(rows, profile, moisParam)));
 });
 
 router.post('/planning/periode', requireAdmin, async (req, res) => {
-  const { alternant_id, debut, fin, type, jours_ouvres, retour } = req.body;
+  const { alternant_id, debut, fin, type, modalite, jours_ouvres, retour } = req.body;
   if (alternant_id && debut && fin && TYPES.includes(type)) {
     const dates = (jours_ouvres === 'on' ? joursOuvresEntre(debut, fin) : (() => {
       const list = [];
       for (let d = new Date(debut); d <= new Date(fin); d.setDate(d.getDate() + 1)) list.push(d.toISOString().slice(0, 10));
       return list;
     })()).filter(date => !estFerie(date));
-    const rows = dates.map(date => ({ alternant_id, date, type }));
+    const modaliteRetenue = type === 'entreprise' && ['presentiel', 'distanciel'].includes(modalite) ? modalite : null;
+    const rows = dates.map(date => ({ alternant_id, date, type, modalite: modaliteRetenue }));
     if (rows.length) await req.db.from('planning').upsert(rows, { onConflict: 'alternant_id,date' });
 
     // Un congé ou une récupération ajouté(e) directement depuis le planning doit
@@ -102,12 +103,14 @@ router.post('/alternants/:id/planning-import', requireAdmin, upload.single('fich
 router.post('/alternants/:id/planning-import/confirmer', requireAdmin, async (req, res) => {
   const dates = [].concat(req.body.date || []);
   const types = [].concat(req.body.type || []);
+  const modalites = [].concat(req.body.modalite || []);
   const keep = [].concat(req.body.keep || []).map(String);
 
   const rows = [];
   dates.forEach((date, i) => {
     if (keep.includes(String(i)) && date && TYPES.includes(types[i]) && !estFerie(date)) {
-      rows.push({ alternant_id: req.params.id, date, type: types[i] });
+      const modalite = types[i] === 'entreprise' && ['presentiel', 'distanciel'].includes(modalites[i]) ? modalites[i] : null;
+      rows.push({ alternant_id: req.params.id, date, type: types[i], modalite });
     }
   });
   if (rows.length) {

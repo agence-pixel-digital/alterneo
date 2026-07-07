@@ -38,7 +38,7 @@
             </td>
             <% l.cellules.forEach(function(c) { %>
               <td class="planning-global-cell <%= c.type ? 'type-' + c.type : (c.isWeekend ? 'weekend' : '') %>"
-                title="<%= c.type ? ({ entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récupération', absent:'Absent', ferie:'Férié' })[c.type] : '' %>"
+                title="<%= c.type ? ({ entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récupération', absent:'Absent', ferie:'Férié' })[c.type] + (c.modalite ? ' — ' + (c.modalite === 'presentiel' ? 'Présentiel' : 'Distanciel') : '') : '' %>"
               >&nbsp;</td>
             <% }); %>
           </tr>

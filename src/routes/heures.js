@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware');
+const { iso } = require('../lib/dates');
 
 router.get('/heures', async (req, res) => {
   const db = req.db;
@@ -40,7 +41,7 @@ router.post('/heures', requireAdmin, async (req, res) => {
   const h = parseFloat(heures);
   if (alternant_id && h) {
     await req.db.from('heures_supplementaires').insert({
-      alternant_id, heures: h, date: date || new Date().toISOString().slice(0, 10), motif: motif || 'Heures supplémentaires'
+      alternant_id, heures: h, date: date || iso(new Date()), motif: motif || 'Heures supplémentaires'
     });
   }
   res.redirect('/heures?alt=' + alternant_id);

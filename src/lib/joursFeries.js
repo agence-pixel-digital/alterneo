@@ -1,8 +1,14 @@
 // Jours fériés légaux français : dates fixes + dates mobiles calculées à
 // partir du dimanche de Pâques (algorithme de Gauss/Meeus, calendrier grégorien).
 
+// Sérialise un Date en 'YYYY-MM-DD' à partir de ses composantes LOCALES.
+// Ne jamais utiliser toISOString() ici : ça repasse par UTC et décale la
+// date d'un jour quand le fuseau serveur est en avance sur UTC (ex. Europe/Paris en été).
 function iso(d) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function datePaques(annee) {

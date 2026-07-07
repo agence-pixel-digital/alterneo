@@ -48,6 +48,7 @@
 
     window.toggleSelectionMode = function () {
       selectionMode = !selectionMode;
+      window.__calendarSelectionMode = selectionMode;
       document.getElementById('btn-selectionner').textContent = selectionMode ? 'Quitter la sélection' : 'Sélectionner';
       document.getElementById('selection-bar').style.display = selectionMode ? 'flex' : 'none';
       if (!selectionMode) annulerSelection();

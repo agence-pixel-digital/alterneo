@@ -5,7 +5,7 @@
 <div class="<%= profile.heures_eligible ? 'grid-4' : 'grid-3' %>">
   <a href="/conges" class="card" style="display:block;">
     <div class="stat-label">Congés disponibles</div>
-    <div class="stat-value" style="color:#1F9D6B;"><%= dispo %> j</div>
+    <div class="stat-value" style="color:<%= dispo < 0 ? '#C2502E' : '#1F9D6B' %>;"><%= dispo %> j</div>
   </a>
   <a href="/conges" class="card" style="display:block;">
     <div class="stat-label">Demandes en attente</div>

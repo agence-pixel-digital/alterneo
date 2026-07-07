@@ -52,52 +52,19 @@
 </div>
 
 <div class="card">
-  <h3>Planning</h3>
-  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id, alternantId: alternant.id }, grille)) %>
-</div>
-
-<div class="grid-2">
-  <div class="card">
-    <h3>Importer un planning (Excel)</h3>
-    <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 10px;">Téléchargez le modèle, complétez-le, puis reuploadez-le ici. Vous pourrez vérifier chaque ligne avant enregistrement.</p>
-    <a href="/files/modele-planning.xlsx" download style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#2E5C8A;margin-bottom:14px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 4v11M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>
-      Télécharger le modèle Excel
-    </a>
-    <form method="POST" action="/alternants/<%= alternant.id %>/planning-import" enctype="multipart/form-data">
-      <div class="upload-zone">
-        <input type="file" name="fichier" accept=".xlsx" required>
-        <span>Fichier Excel (.xlsx), max 5 Mo</span>
-      </div>
-      <button class="btn btn-outline" type="submit" style="width:100%;">Analyser le fichier</button>
-    </form>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <h3 style="margin:0;">Planning</h3>
+    <button type="button" class="btn btn-outline" id="btn-selectionner" onclick="toggleSelectionMode()">Sélectionner</button>
+  </div>
+  <div id="selection-bar" style="display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#EAF1F8;border:1px solid #CFDBE8;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+    <span style="font-size:13px;color:#244B70;font-weight:600;" id="selection-hint">Cliquez sur le premier jour de la période à modifier.</span>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="btn btn-outline" onclick="annulerSelection()">Annuler</button>
+      <button type="button" class="btn btn-primary" id="btn-confirmer-selection" style="display:none;" onclick="confirmerSelection()">Modifier cette période</button>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Ajouter une période manuellement</h3>
-    <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 14px;">Si l'import automatique ne convient pas, renseignez directement une période.</p>
-    <form method="POST" action="/planning/periode">
-      <input type="hidden" name="alternant_id" value="<%= alternant.id %>">
-      <input type="hidden" name="retour" value="/alternants?voir=<%= alternant.id %>">
-      <div class="grid-2">
-        <div><label>Du</label><%- include('date-input', { name: 'debut' }) %></div>
-        <div><label>Au</label><%- include('date-input', { name: 'fin' }) %></div>
-      </div>
-      <label>Type</label>
-      <%- include('select-field', { name: 'type', value: 'entreprise', options: [
-        { value: 'entreprise', label: 'Entreprise' },
-        { value: 'ecole', label: 'École' },
-        { value: 'conge', label: 'Congé' },
-        { value: 'recuperation', label: 'Heure de récupération' },
-        { value: 'absent', label: 'Absent' }
-      ] }) %>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <input type="checkbox" name="jours_ouvres" checked style="width:auto;margin:0;">
-        Jours ouvrés uniquement (exclut samedi/dimanche)
-      </label>
-      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Ajouter au planning</button>
-    </form>
-  </div>
+  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id, alternantId: alternant.id, selectable: true }, grille)) %>
 </div>
 
 <div class="card">
@@ -117,8 +84,60 @@
       <div><label>Début de contrat</label><%- include('date-input', { name: 'date_debut', value: alternant.date_debut }) %></div>
       <div><label>Fin de contrat</label><%- include('date-input', { name: 'date_fin', value: alternant.date_fin }) %></div>
     </div>
-    <button class="btn btn-primary" type="submit">Enregistrer</button>
+    <button class="btn btn-primary" type="submit" style="width:100%;">Enregistrer</button>
   </form>
+
+  <div style="border-top:1px solid #F1F4F8;margin-top:20px;padding-top:20px;">
+    <h4 style="margin:0 0 8px;font-size:14px;">Importer un planning (Excel)</h4>
+    <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 10px;">Téléchargez le modèle, complétez-le, puis reuploadez-le ici. Vous pourrez vérifier chaque ligne avant enregistrement.</p>
+    <a href="/files/modele-planning.xlsx" download style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#2E5C8A;margin-bottom:14px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 4v11M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>
+      Télécharger le modèle Excel
+    </a>
+    <form method="POST" action="/alternants/<%= alternant.id %>/planning-import" enctype="multipart/form-data">
+      <div class="upload-zone">
+        <input type="file" name="fichier" accept=".xlsx" required>
+        <span>Fichier Excel (.xlsx), max 5 Mo</span>
+      </div>
+      <button class="btn btn-outline" type="submit" style="width:100%;">Analyser le fichier</button>
+    </form>
+  </div>
+</div>
+
+<div id="modal-modifier-periode" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Modifier cette période</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-modifier-periode').style.display='none'">✕</button>
+    </div>
+    <p style="font-size:13px;color:#7A8699;margin:0 0 14px;" id="periode-resume"></p>
+    <form method="POST" action="/planning/periode">
+      <input type="hidden" name="alternant_id" value="<%= alternant.id %>">
+      <input type="hidden" name="debut" id="periode-debut">
+      <input type="hidden" name="fin" id="periode-fin">
+      <input type="hidden" name="retour" value="/alternants?voir=<%= alternant.id %>&mois=<%= grille.mois %>">
+      <label>Type</label>
+      <%- include('select-field', { name: 'type', value: 'entreprise', id: 'periode-type', options: [
+        { value: 'entreprise', label: 'Entreprise' },
+        { value: 'ecole', label: 'École' },
+        { value: 'conge', label: 'Congé' },
+        { value: 'recuperation', label: 'Heure de récupération' },
+        { value: 'absent', label: 'Absent' }
+      ] }) %>
+      <div id="periode-modalite-field">
+        <label>Modalité</label>
+        <%- include('select-field', { name: 'modalite', placeholder: 'Non précisé', options: [
+          { value: 'presentiel', label: 'Présentiel' },
+          { value: 'distanciel', label: 'Distanciel' }
+        ] }) %>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" name="jours_ouvres" checked style="width:auto;margin:0;">
+        Jours ouvrés uniquement (exclut samedi/dimanche)
+      </label>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Enregistrer</button>
+    </form>
+  </div>
 </div>
 
 <div class="card" style="border-color:#F0DAD0;">
@@ -132,3 +151,72 @@
     <button class="btn" type="submit" style="background:#C2502E;color:#fff;">Supprimer cet alternant</button>
   </form>
 </div>
+
+<script>
+  (function () {
+    var selectionMode = false;
+    var start = null, end = null;
+
+    window.toggleSelectionMode = function () {
+      selectionMode = !selectionMode;
+      window.__calendarSelectionMode = selectionMode;
+      document.getElementById('btn-selectionner').textContent = selectionMode ? 'Quitter la sélection' : 'Sélectionner';
+      document.getElementById('selection-bar').style.display = selectionMode ? 'flex' : 'none';
+      if (!selectionMode) annulerSelection();
+    };
+
+    window.annulerSelection = function () {
+      start = null; end = null;
+      document.querySelectorAll('.js-day-cell').forEach(function (c) { c.classList.remove('day-selected', 'day-in-range'); });
+      document.getElementById('selection-hint').textContent = 'Cliquez sur le premier jour de la période à modifier.';
+      document.getElementById('btn-confirmer-selection').style.display = 'none';
+    };
+
+    function refreshHighlight() {
+      document.querySelectorAll('.js-day-cell').forEach(function (c) {
+        var d = c.dataset.date;
+        var selected = d === start || d === end;
+        var inRange = start && end && d > start && d < end;
+        c.classList.toggle('day-selected', !!selected);
+        c.classList.toggle('day-in-range', !!inRange);
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      if (!selectionMode) return;
+      var cell = e.target.closest ? e.target.closest('.js-day-cell') : null;
+      if (!cell) return;
+      if (cell.dataset.ferie === '1') return;
+      var date = cell.dataset.date;
+
+      if (!start || (start && end)) {
+        start = date; end = null;
+      } else if (date < start) {
+        start = date;
+      } else {
+        end = date;
+      }
+      refreshHighlight();
+      document.getElementById('selection-hint').textContent = !end
+        ? 'Cliquez sur le dernier jour (ou recliquez sur le même jour pour un seul jour).'
+        : 'Période sélectionnée : cliquez sur « Modifier cette période ».';
+      document.getElementById('btn-confirmer-selection').style.display = start ? 'inline-block' : 'none';
+    });
+
+    window.confirmerSelection = function () {
+      if (!start) return;
+      var finale = end || start;
+      document.getElementById('periode-debut').value = start;
+      document.getElementById('periode-fin').value = finale;
+      document.getElementById('periode-resume').textContent = 'Période : ' + start.split('-').reverse().join('/') + ' → ' + finale.split('-').reverse().join('/');
+      document.getElementById('modal-modifier-periode').style.display = 'flex';
+    };
+
+    function syncModaliteVisibility() {
+      var type = document.getElementById('periode-type').value;
+      document.getElementById('periode-modalite-field').style.display = type === 'entreprise' ? 'block' : 'none';
+    }
+    document.getElementById('periode-type').addEventListener('change', syncModaliteVisibility);
+    syncModaliteVisibility();
+  })();
+</script>
