@@ -13,6 +13,7 @@
       <div class="legend-item"><span class="type-dot dot-conge"></span>Congé</div>
       <div class="legend-item"><span class="type-dot dot-recuperation"></span>Récup.</div>
       <div class="legend-item"><span class="type-dot dot-absent"></span>Absent</div>
+      <div class="legend-item"><span class="type-dot dot-ferie"></span>Férié</div>
     </div>
   </div>
 
@@ -37,7 +38,7 @@
             </td>
             <% l.cellules.forEach(function(c) { %>
               <td class="planning-global-cell <%= c.type ? 'type-' + c.type : (c.isWeekend ? 'weekend' : '') %>"
-                title="<%= c.type ? ({ entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récupération', absent:'Absent' })[c.type] : '' %>"
+                title="<%= c.type ? ({ entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récupération', absent:'Absent', ferie:'Férié' })[c.type] : '' %>"
               >&nbsp;</td>
             <% }); %>
           </tr>

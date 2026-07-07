@@ -7,6 +7,7 @@ const { parseExcelPlanning } = require('../lib/planningExcel');
 const { buildMonthGrid, buildGlobalMonthGrid } = require('../lib/planningGrid');
 const { joursOuvresEntre } = require('../lib/dates');
 const { deduireRecuperation } = require('../lib/heuresSupp');
+const { estFerie } = require('../lib/joursFeries');
 
 const TYPES = ['entreprise', 'ecole', 'conge', 'recuperation', 'absent'];
 const EXCEL_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -33,18 +34,18 @@ router.get('/planning', async (req, res) => {
   }
 
   const profile = req.profile;
-  const { data: rows } = await req.db.from('planning').select('date,type').eq('alternant_id', profile.id).gte('date', monthStart).lte('date', monthEnd);
-  res.render('planning-alternant', buildMonthGrid(rows, profile, moisParam));
+  const { data: rows } = await req.db.from('planning').select('date,type,commentaire').eq('alternant_id', profile.id).gte('date', monthStart).lte('date', monthEnd);
+  res.render('planning-alternant', Object.assign({ alternantId: profile.id }, buildMonthGrid(rows, profile, moisParam)));
 });
 
 router.post('/planning/periode', requireAdmin, async (req, res) => {
   const { alternant_id, debut, fin, type, jours_ouvres, retour } = req.body;
   if (alternant_id && debut && fin && TYPES.includes(type)) {
-    const dates = jours_ouvres === 'on' ? joursOuvresEntre(debut, fin) : (() => {
+    const dates = (jours_ouvres === 'on' ? joursOuvresEntre(debut, fin) : (() => {
       const list = [];
       for (let d = new Date(debut); d <= new Date(fin); d.setDate(d.getDate() + 1)) list.push(d.toISOString().slice(0, 10));
       return list;
-    })();
+    })()).filter(date => !estFerie(date));
     const rows = dates.map(date => ({ alternant_id, date, type }));
     if (rows.length) await req.db.from('planning').upsert(rows, { onConflict: 'alternant_id,date' });
 
@@ -64,6 +65,22 @@ router.post('/planning/periode', requireAdmin, async (req, res) => {
     }
   }
   res.redirect(retour || ('/alternants?voir=' + alternant_id));
+});
+
+router.post('/planning/commentaire', async (req, res) => {
+  const { alternant_id, date, commentaire, retour } = req.body;
+  if (req.profile.role !== 'admin' && req.profile.id !== alternant_id) {
+    return res.status(403).send('Accès refusé.');
+  }
+  if (alternant_id && date) {
+    const { data: existing } = await supabaseAdmin.from('planning').select('id').eq('alternant_id', alternant_id).eq('date', date).maybeSingle();
+    if (existing) {
+      await supabaseAdmin.from('planning').update({ commentaire: commentaire || null }).eq('alternant_id', alternant_id).eq('date', date);
+    } else if (commentaire) {
+      await supabaseAdmin.from('planning').insert({ alternant_id, date, commentaire });
+    }
+  }
+  res.redirect(retour || '/planning');
 });
 
 router.post('/alternants/:id/planning-import', requireAdmin, upload.single('fichier'), async (req, res) => {
@@ -89,7 +106,7 @@ router.post('/alternants/:id/planning-import/confirmer', requireAdmin, async (re
 
   const rows = [];
   dates.forEach((date, i) => {
-    if (keep.includes(String(i)) && date && TYPES.includes(types[i])) {
+    if (keep.includes(String(i)) && date && TYPES.includes(types[i]) && !estFerie(date)) {
       rows.push({ alternant_id: req.params.id, date, type: types[i] });
     }
   });

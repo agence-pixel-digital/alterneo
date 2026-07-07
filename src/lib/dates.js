@@ -1,3 +1,5 @@
+const { estFerie } = require('./joursFeries');
+
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -19,13 +21,14 @@ function next10JoursOuvres(start = new Date()) {
   return jours;
 }
 
-// Jours ouvrés (hors week-ends) entre deux dates ISO incluses.
+// Jours ouvrés (hors week-ends et jours fériés) entre deux dates ISO incluses.
 function joursOuvresEntre(debutIso, finIso) {
   const jours = [];
   const start = new Date(debutIso), end = new Date(finIso);
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const wd = d.getDay();
-    if (wd !== 0 && wd !== 6) jours.push(iso(d));
+    const key = iso(d);
+    if (wd !== 0 && wd !== 6 && !estFerie(key)) jours.push(key);
   }
   return jours;
 }

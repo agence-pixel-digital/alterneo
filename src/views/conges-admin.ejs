@@ -12,10 +12,11 @@
     <div style="border:1px solid #EDF0F4;border-radius:12px;padding:16px;margin-bottom:12px;">
       <strong><%= c.profiles.prenom %> <%= c.profiles.nom %></strong>
       <% if (c.type === 'recuperation') { %><span class="badge" style="background:#E0F5F8;color:#0E5E66;">Récupération</span><% } %>
+      <% if (c.type === 'sans_solde') { %><span class="badge" style="background:#EAEDF2;color:#5B6B7D;">Sans solde</span><% } %>
       — <%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %> (<%= c.jours %> j) ·
       <% if (c.type === 'recuperation') { %>
         <span class="muted"><%= c.solde.heuresRecupDispo %> h de récupération disponibles</span>
-      <% } else { %>
+      <% } else if (c.type !== 'sans_solde') { %>
         <span class="muted"><%= c.solde.dispo %> j disponibles</span>
       <% } %>
       <p style="color:#7A8699;font-size:13px;"><%= c.commentaire || 'Aucun commentaire' %></p>
@@ -53,7 +54,7 @@
       <tr>
         <td><%= c.profiles.prenom %> <%= c.profiles.nom %></td>
         <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
-        <td class="muted"><%= c.type === 'recuperation' ? 'Récupération' : 'Payé' %></td>
+        <td class="muted"><%= { recuperation: 'Récupération', sans_solde: 'Sans solde' }[c.type] || 'Payé' %></td>
         <td><%= c.jours %></td>
         <td><span class="badge badge-<%= c.statut %>"><%= c.statut %></span></td>
         <td class="muted"><%= c.statut === 'refusee' ? (c.motif_refus || '—') : '—' %></td>

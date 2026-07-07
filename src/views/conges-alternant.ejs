@@ -22,7 +22,7 @@
     }).forEach(function(c) { %>
       <tr>
         <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
-        <td class="muted"><%= c.type === 'recuperation' ? 'Récupération' : 'Payé' %></td>
+        <td class="muted"><%= { recuperation: 'Récupération', sans_solde: 'Sans solde' }[c.type] || 'Payé' %></td>
         <td><%= c.jours %></td>
         <td><span class="badge badge-<%= c.statut %>"><%= c.statut %></span></td>
       </tr>
@@ -39,10 +39,12 @@
     </div>
     <form method="POST" action="/conges">
       <%- include('partials/range-input', { debutName: 'date_debut', finName: 'date_fin' }) %>
-      <% if (profile.heures_eligible) { %>
-        <label>Type de congé</label>
-        <%- include('partials/select-field', { name: 'type', value: 'paye', options: [{ value: 'paye', label: 'Congé payé' }, { value: 'recuperation', label: 'Heure de récupération' }] }) %>
-      <% } %>
+      <label>Type de congé</label>
+      <%- include('partials/select-field', { name: 'type', value: 'paye', options: [
+        { value: 'paye', label: 'Congé payé' },
+      ].concat(profile.heures_eligible ? [{ value: 'recuperation', label: 'Heure de récupération' }] : []).concat([
+        { value: 'sans_solde', label: 'Sans solde' }
+      ]) }) %>
       <label>Commentaire (optionnel)</label>
       <textarea name="commentaire" rows="3"></textarea>
       <button class="btn btn-primary" type="submit" style="width:100%;">Envoyer la demande</button>

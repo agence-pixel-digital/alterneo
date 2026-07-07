@@ -61,13 +61,10 @@ router.get('/conges', async (req, res) => {
 
 router.post('/conges', async (req, res) => {
   const { date_debut, date_fin, commentaire } = req.body;
-  const type = (req.profile.heures_eligible && req.body.type === 'recuperation') ? 'recuperation' : 'paye';
-  const start = new Date(date_debut), end = new Date(date_fin);
-  let jours = 0;
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const wd = d.getDay();
-    if (wd !== 0 && wd !== 6) jours++;
-  }
+  let type = 'paye';
+  if (req.body.type === 'recuperation' && req.profile.heures_eligible) type = 'recuperation';
+  else if (req.body.type === 'sans_solde') type = 'sans_solde';
+  const jours = joursOuvresEntre(date_debut, date_fin).length;
   if (jours <= 0) {
     const [{ data: mine }, solde] = await Promise.all([
       req.db.from('conges').select('*').eq('alternant_id', req.profile.id),

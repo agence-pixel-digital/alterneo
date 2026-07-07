@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabaseAnon, supabaseForUser } = require('../supabaseClient');
+const { supabaseAnon, supabaseAdmin } = require('../supabaseClient');
 
 router.get('/login', (req, res) => {
   res.render('login', { error: null, success: null });
@@ -51,7 +51,11 @@ router.post('/reinitialiser-mot-de-passe', async (req, res) => {
   if (!password || password.length < 8) {
     return res.render('reset-password', { error: 'Le mot de passe doit contenir au moins 8 caractères.' });
   }
-  const { error } = await supabaseForUser(access_token).auth.updateUser({ password });
+  const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(access_token);
+  if (userErr || !userData.user) {
+    return res.render('reset-password', { error: 'Lien invalide ou expiré. Redemandez un lien.' });
+  }
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(userData.user.id, { password });
   if (error) {
     return res.render('reset-password', { error: error.message });
   }

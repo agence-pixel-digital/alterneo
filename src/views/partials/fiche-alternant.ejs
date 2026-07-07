@@ -53,7 +53,7 @@
 
 <div class="card">
   <h3>Planning</h3>
-  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id }, grille)) %>
+  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id, alternantId: alternant.id }, grille)) %>
 </div>
 
 <div class="grid-2">
@@ -103,6 +103,12 @@
 <div class="card">
   <h3>Modifier la fiche</h3>
   <form method="POST" action="/alternants/<%= alternant.id %>">
+    <div class="grid-2">
+      <div><label>Prénom</label><input name="prenom" required value="<%= alternant.prenom %>"></div>
+      <div><label>Nom</label><input name="nom" required value="<%= alternant.nom %>"></div>
+    </div>
+    <label>E-mail</label>
+    <input type="email" name="email" required value="<%= alternant.email %>">
     <label>Poste</label>
     <input name="poste" value="<%= alternant.poste || '' %>">
     <label>Société</label>
