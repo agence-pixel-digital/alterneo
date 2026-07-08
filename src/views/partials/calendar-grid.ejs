@@ -38,7 +38,14 @@
             </button>
           </div>
           <% if (cell.type) { %>
-            <span class="tag"><span class="type-dot dot-<%= cell.type %>"></span><%= { entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récup.', absent:'Absent', ferie:'Férié' }[cell.type] %><%= cell.modalite ? ' · ' + (cell.modalite === 'presentiel' ? 'Présentiel' : 'Distanciel') : '' %></span>
+            <span class="tag">
+              <span class="type-dot dot-<%= cell.type %>"></span><span class="tag-label"><%= { entreprise:'Entreprise', ecole:'École', conge:'Congé', recuperation:'Récup.', absent:'Absent', ferie:'Férié' }[cell.type] %></span>
+              <% if (cell.modalite === 'presentiel') { %>
+                <span class="modalite-icon" title="Présentiel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></span>
+              <% } else if (cell.modalite === 'distanciel') { %>
+                <span class="modalite-icon" title="Distanciel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></span>
+              <% } %>
+            </span>
           <% } %>
           <% if (cell.commentaire) { %>
             <div class="day-note-preview" data-date="<%= cell.key %>" data-date-fr="<%= formatDate(cell.key) %>" data-commentaire="<%= cell.commentaire %>"
