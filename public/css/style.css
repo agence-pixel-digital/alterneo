@@ -106,7 +106,7 @@ td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 .calendar-cell .tag { margin-top:auto; font-size:11px; font-weight:700; display:inline-flex; align-items:center; padding:3px 8px; border-radius:20px; max-width:100%; white-space:nowrap; }
 .calendar-cell .tag .type-dot { flex-shrink:0; }
 .calendar-cell .tag .tag-label { overflow:hidden; text-overflow:ellipsis; min-width:0; }
-.calendar-cell .tag .modalite-icon { display:inline-flex; align-items:center; margin-left:5px; flex-shrink:0; opacity:.8; }
+.calendar-cell .tag .modalite-icon { display:inline-flex; align-items:center; margin-left:8px; flex-shrink:0; opacity:.8; }
 .day-note-btn { border:0; background:none; padding:2px; border-radius:6px; color:#C7D0DB; cursor:pointer; flex-shrink:0; line-height:0; }
 .day-note-btn:hover { background:rgba(20,40,70,.08); color:#5B6B7D; }
 .day-note-btn.has-note { color:#B7791F; }
