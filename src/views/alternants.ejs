@@ -50,6 +50,11 @@
         <div><label>Début de contrat</label><%- include('partials/date-input', { name: 'date_debut' }) %></div>
         <div><label>Fin de contrat</label><%- include('partials/date-input', { name: 'date_fin' }) %></div>
       </div>
+      <label>Mot de passe (optionnel)</label>
+      <input type="text" name="mot_de_passe" minlength="8" placeholder="Laisser vide pour envoyer un e-mail de choix de mot de passe">
+      <p style="font-size:12px;color:#9AA7B5;margin:2px 0 8px;">
+        Si vous renseignez un mot de passe (8 caractères minimum), l'alternant pourra se connecter directement avec celui-ci — aucun e-mail ne sera envoyé.
+      </p>
       <label>Planning initial (optionnel)</label>
       <p style="font-size:12px;color:#9AA7B5;margin:0 0 8px;">
         <a href="/files/modele-planning.xlsx" download style="color:#2E5C8A;font-weight:600;">Télécharger le modèle Excel</a> — vous pourrez vérifier chaque ligne avant enregistrement, ou l'importer plus tard depuis la fiche.

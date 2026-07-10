@@ -57,8 +57,7 @@ router.get('/alternants', requireAdmin, async (req, res) => {
 });
 
 router.post('/alternants', requireAdmin, uploadPlanning.single('fichier_planning'), async (req, res) => {
-  const { prenom, nom, email, poste, date_debut, date_fin, societe_id } = req.body;
-  const tempPassword = crypto.randomBytes(24).toString('base64');
+  const { prenom, nom, email, poste, date_debut, date_fin, societe_id, mot_de_passe } = req.body;
 
   const rerenderAvecErreur = async (error) => {
     const [{ data: alternants }, { data: societes }] = await Promise.all([
@@ -68,9 +67,16 @@ router.post('/alternants', requireAdmin, uploadPlanning.single('fichier_planning
     res.render('alternants', { alternants: alternants || [], societes: societes || [], selected: null, error, showModal: true });
   };
 
-  // 1) Création du compte de connexion (Supabase Auth)
+  if (mot_de_passe && mot_de_passe.length < 8) {
+    return rerenderAvecErreur('Le mot de passe doit contenir au moins 8 caractères.');
+  }
+
+  // 1) Création du compte de connexion (Supabase Auth). Si l'admin a choisi un
+  // mot de passe, on l'utilise directement ; sinon un mot de passe temporaire
+  // aléatoire est généré en attendant que l'alternant en choisisse un lui-même.
+  const motDePasseInitial = mot_de_passe || crypto.randomBytes(24).toString('base64');
   const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-    email, password: tempPassword, email_confirm: true
+    email, password: motDePasseInitial, email_confirm: true
   });
   if (createErr) return rerenderAvecErreur(createErr.message);
 
@@ -84,12 +90,15 @@ router.post('/alternants', requireAdmin, uploadPlanning.single('fichier_planning
     return rerenderAvecErreur(profilErr ? profilErr.message : "Impossible de créer la fiche de l'alternant.");
   }
 
-  // 3) Envoi d'un e-mail à l'alternant pour qu'il choisisse lui-même son mot de passe
-  // (réutilise le même lien/écran que « mot de passe oublié »).
-  const { error: mailErr } = await supabaseAnon.auth.resetPasswordForEmail(email, {
-    redirectTo: (process.env.BASE_URL || 'http://localhost:3000') + '/reinitialiser-mot-de-passe'
-  });
-  if (mailErr) console.error('Erreur envoi e-mail de choix de mot de passe :', mailErr.message);
+  // 3) Si aucun mot de passe n'a été choisi par l'admin, on envoie un e-mail à
+  // l'alternant pour qu'il choisisse lui-même le sien (réutilise le même
+  // lien/écran que « mot de passe oublié »).
+  if (!mot_de_passe) {
+    const { error: mailErr } = await supabaseAnon.auth.resetPasswordForEmail(email, {
+      redirectTo: (process.env.BASE_URL || 'http://localhost:3000') + '/reinitialiser-mot-de-passe'
+    });
+    if (mailErr) console.error('Erreur envoi e-mail de choix de mot de passe :', mailErr.message);
+  }
 
   // 4) Si un planning Excel a été joint à la création, on l'analyse tout de suite
   // et on affiche l'écran de vérification habituel avant enregistrement.
