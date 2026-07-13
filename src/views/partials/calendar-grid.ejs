@@ -9,8 +9,7 @@
   <div class="legend">
     <div class="legend-item"><span class="type-dot dot-entreprise"></span>Entreprise</div>
     <div class="legend-item"><span class="type-dot dot-ecole"></span>École</div>
-    <div class="legend-item"><span class="type-dot dot-conge"></span>Congé</div>
-    <div class="legend-item"><span class="type-dot dot-recuperation"></span>Récup.</div>
+    <div class="legend-item"><span class="type-dot dot-conge"></span>Congé / Récup.</div>
     <div class="legend-item"><span class="type-dot dot-absent"></span>Absent</div>
     <div class="legend-item"><span class="type-dot dot-ferie"></span>Férié</div>
   </div>
@@ -28,7 +27,13 @@
       <% if (!cell) { %>
         <div class="calendar-cell empty"></div>
       <% } else { %>
-        <div class="calendar-cell <%= !cell.inContract ? 'out-of-contract' : (cell.type ? 'type-'+cell.type : '') %> <%= cell.today ? 'today' : '' %> <%= locals.selectable ? 'js-day-cell' : '' %>" data-date="<%= cell.key %>" data-ferie="<%= cell.type === 'ferie' ? '1' : '' %>">
+        <% const editableJour = locals.dayEditable && cell.inContract && cell.type !== 'ferie'; %>
+        <div class="calendar-cell <%= !cell.inContract ? 'out-of-contract' : (cell.type ? 'type-'+cell.type : '') %> <%= cell.today ? 'today' : '' %> <%= locals.selectable ? 'js-day-cell' : '' %>" data-date="<%= cell.key %>" data-ferie="<%= cell.type === 'ferie' ? '1' : '' %>"
+          <% if (editableJour) { %>
+            data-type="<%= cell.type || '' %>" data-modalite="<%= cell.modalite || '' %>" data-commentaire="<%= cell.commentaire || '' %>" data-date-fr="<%= formatDate(cell.key) %>"
+            style="cursor:pointer;" onclick="if(!window.__calendarSelectionMode){ouvrirModalJour(this);}"
+          <% } %>
+        >
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
             <span class="num"><%= cell.day %></span>
             <button type="button" class="day-note-btn <%= cell.commentaire ? 'has-note' : '' %>"
@@ -82,3 +87,86 @@
     document.getElementById('modal-commentaire-jour').style.display = 'flex';
   }
 </script>
+
+<% if (locals.dayEditable) { %>
+<div id="modal-jour" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Modifier le <span id="jour-titre-date"></span></h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-jour').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/planning/jour">
+      <input type="hidden" name="alternant_id" value="<%= alternantId %>">
+      <input type="hidden" name="date" id="jour-date-input">
+      <input type="hidden" name="retour" value="<%= baseUrl %><%= sep %>mois=<%= mois %>#planning-calendar">
+      <label>Type de jour</label>
+      <%- include('select-field', { name: 'type', id: 'jour-type', value: 'entreprise', options: [
+        { value: 'entreprise', label: 'Entreprise' },
+        { value: 'ecole', label: 'École' },
+        { value: 'conge', label: 'Congé' },
+        { value: 'absent', label: 'Absent' }
+      ] }) %>
+      <div id="jour-conge-type-field">
+        <label>Type de congé</label>
+        <%- include('select-field', { name: 'conge_type', id: 'jour-conge-type', value: 'paye', options: [
+          { value: 'paye', label: 'Congé payé' },
+          { value: 'recuperation', label: 'Récupération' },
+          { value: 'sans_solde', label: 'Sans solde' }
+        ] }) %>
+      </div>
+      <div id="jour-modalite-field">
+        <label>Modalité</label>
+        <%- include('select-field', { name: 'modalite', id: 'jour-modalite', placeholder: 'Non précisé', options: [
+          { value: 'presentiel', label: 'Présentiel' },
+          { value: 'distanciel', label: 'Distanciel' }
+        ] }) %>
+      </div>
+      <label>Note du jour</label>
+      <textarea name="commentaire" id="jour-commentaire" rows="3" placeholder="ex. Prendre le matériel, Déplacement…"></textarea>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Enregistrer</button>
+    </form>
+  </div>
+</div>
+<script>
+  (function () {
+    // Met à jour un composant select-field depuis le JS (valeur cachée + libellé affiché).
+    function setSelect(id, value, placeholderLabel) {
+      var hidden = document.getElementById(id);
+      var field = hidden.closest('.select-field');
+      var opt = field.querySelector('.select-option[data-value="' + value + '"]');
+      field.querySelectorAll('.select-option').forEach(function (o) { o.classList.remove('selected'); });
+      if (!opt) {
+        hidden.value = '';
+        field.querySelector('.select-label').textContent = placeholderLabel || '';
+        return;
+      }
+      hidden.value = opt.dataset.value;
+      field.querySelector('.select-label').textContent = opt.dataset.label;
+      opt.classList.add('selected');
+    }
+
+    function syncJourFields() {
+      var type = document.getElementById('jour-type').value;
+      document.getElementById('jour-conge-type-field').style.display = type === 'conge' ? 'block' : 'none';
+      document.getElementById('jour-modalite-field').style.display = type === 'entreprise' ? 'block' : 'none';
+    }
+    document.getElementById('jour-type').addEventListener('change', syncJourFields);
+
+    window.ouvrirModalJour = function (cell) {
+      var d = cell.dataset;
+      var type = d.type || 'entreprise';
+      var congeType = 'paye';
+      // La récupération est présentée comme un congé (sous-type « Récupération »).
+      if (type === 'recuperation') { type = 'conge'; congeType = 'recuperation'; }
+      document.getElementById('jour-titre-date').textContent = d.dateFr;
+      document.getElementById('jour-date-input').value = d.date;
+      setSelect('jour-type', type);
+      setSelect('jour-conge-type', congeType);
+      setSelect('jour-modalite', d.modalite || '', 'Non précisé');
+      document.getElementById('jour-commentaire').value = d.commentaire || '';
+      syncJourFields();
+      document.getElementById('modal-jour').style.display = 'flex';
+    };
+  })();
+</script>
+<% } %>

@@ -64,7 +64,7 @@
     </div>
   </div>
 
-  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id, alternantId: alternant.id, selectable: true }, grille)) %>
+  <%- include('calendar-grid', Object.assign({ baseUrl: '/alternants?voir=' + alternant.id, alternantId: alternant.id, selectable: true, dayEditable: true }, grille)) %>
 </div>
 
 <div class="card">

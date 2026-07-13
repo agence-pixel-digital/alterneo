@@ -60,14 +60,14 @@ td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 .type-entreprise { background:#E7EFF8; color:#244B70; }
 .type-ecole { background:#EFE9F9; color:#553A8C; }
 .type-conge { background:#E2F3EB; color:#15784F; }
-.type-recuperation { background:#E0F5F8; color:#0E5E66; }
+.type-recuperation { background:#E2F3EB; color:#15784F; }
 .type-absent { background:#F8E8E2; color:#9A3D22; }
 .type-ferie { background:#FBF3E2; color:#8A6116; }
 .type-dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:5px; }
 .dot-entreprise { background:#2E5C8A; }
 .dot-ecole { background:#7A53C1; }
 .dot-conge { background:#1F9D6B; }
-.dot-recuperation { background:#0891B2; }
+.dot-recuperation { background:#1F9D6B; }
 .dot-absent { background:#C2502E; }
 .dot-ferie { background:#D9A441; }
 .legend { display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
@@ -116,6 +116,8 @@ td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 .gantt-item { display:block; }
 .gantt-bar { height:100%; background:#2E5C8A; border-radius:6px; display:flex; align-items:center; padding:0 8px; overflow:hidden; }
 .gantt-bar-editable { cursor:pointer; }
+.gantt-bar-ecole { background:#EFE9F9; border:1.5px dashed #B9A3E3; }
+.gantt-bar-ecole .gantt-bar-label { color:#553A8C; }
 .gantt-bar-label { color:#fff; font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .gantt-tooltip { display:none; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#1C2A3A; color:#fff; font-size:11.5px; font-weight:600; padding:6px 10px; border-radius:8px; white-space:nowrap; z-index:20; box-shadow:0 8px 20px rgba(20,40,70,.25); pointer-events:none; text-align:center; }
 .gantt-item:hover .gantt-tooltip { display:block; }
@@ -128,19 +130,19 @@ td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 .calendar-cell.type-entreprise { background:#E7EFF8; border-color:#2E5C8A66; }
 .calendar-cell.type-ecole { background:#EFE9F9; border-color:#7A53C166; }
 .calendar-cell.type-conge { background:#E2F3EB; border-color:#1F9D6B66; }
-.calendar-cell.type-recuperation { background:#E0F5F8; border-color:#0891B266; }
+.calendar-cell.type-recuperation { background:#E2F3EB; border-color:#1F9D6B66; }
 .calendar-cell.type-absent { background:#F8E8E2; border-color:#C2502E66; }
 .calendar-cell.type-ferie { background:#FBF3E2; border-color:#D9A44166; }
 .calendar-cell.type-entreprise .num, .calendar-cell.type-entreprise .tag { color:#244B70; }
 .calendar-cell.type-ecole .num, .calendar-cell.type-ecole .tag { color:#553A8C; }
 .calendar-cell.type-conge .num, .calendar-cell.type-conge .tag { color:#15784F; }
-.calendar-cell.type-recuperation .num, .calendar-cell.type-recuperation .tag { color:#0E5E66; }
+.calendar-cell.type-recuperation .num, .calendar-cell.type-recuperation .tag { color:#15784F; }
 .calendar-cell.type-absent .num, .calendar-cell.type-absent .tag { color:#9A3D22; }
 .calendar-cell.type-ferie .num, .calendar-cell.type-ferie .tag { color:#8A6116; }
 .calendar-cell.type-entreprise .tag { background:rgba(46,92,138,.14); }
 .calendar-cell.type-ecole .tag { background:rgba(122,83,193,.14); }
 .calendar-cell.type-conge .tag { background:rgba(31,157,107,.14); }
-.calendar-cell.type-recuperation .tag { background:rgba(8,145,178,.14); }
+.calendar-cell.type-recuperation .tag { background:rgba(31,157,107,.14); }
 .calendar-cell.type-absent .tag { background:rgba(194,80,46,.14); }
 .calendar-cell.type-ferie .tag { background:rgba(217,164,65,.18); }
 

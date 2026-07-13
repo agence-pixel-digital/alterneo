@@ -68,6 +68,39 @@ router.post('/planning/periode', requireAdmin, async (req, res) => {
   res.redirect(retour || ('/alternants?voir=' + alternant_id));
 });
 
+// Modification d'un seul jour depuis la fiche alternant (clic sur une case du
+// planning) : type de jour, sous-type de congé, modalité et note en une fois.
+router.post('/planning/jour', requireAdmin, async (req, res) => {
+  const { alternant_id, date, type, conge_type, modalite, commentaire, retour } = req.body;
+  const CONGE_TYPES = ['paye', 'recuperation', 'sans_solde'];
+  if (alternant_id && date && !estFerie(date) && ['entreprise', 'ecole', 'conge', 'absent'].includes(type)) {
+    const sousType = type === 'conge' && CONGE_TYPES.includes(conge_type) ? conge_type : 'paye';
+    // La récupération est saisie comme un congé de sous-type « Récupération »
+    // mais reste stockée sous son propre type dans le planning (décompte d'heures).
+    const typePlanning = type === 'conge' && sousType === 'recuperation' ? 'recuperation' : type;
+    const modaliteRetenue = typePlanning === 'entreprise' && ['presentiel', 'distanciel'].includes(modalite) ? modalite : null;
+
+    const { data: existant } = await req.db.from('planning').select('type').eq('alternant_id', alternant_id).eq('date', date).maybeSingle();
+    await req.db.from('planning').upsert(
+      { alternant_id, date, type: typePlanning, modalite: modaliteRetenue, commentaire: commentaire || null },
+      { onConflict: 'alternant_id,date' }
+    );
+
+    // Même logique que /planning/periode : un jour passé en congé/récupération
+    // est comptabilisé dans l'onglet Congés — sauf s'il l'était déjà.
+    const dejaConge = existant && ['conge', 'recuperation'].includes(existant.type);
+    if ((typePlanning === 'conge' || typePlanning === 'recuperation') && !dejaConge) {
+      await supabaseAdmin.from('conges').insert({
+        alternant_id, date_debut: date, date_fin: date, jours: 1,
+        statut: 'validee', type: sousType,
+        commentaire: "Ajouté manuellement par l'administrateur depuis le planning"
+      });
+      if (typePlanning === 'recuperation') await deduireRecuperation(req.db, alternant_id, [date]);
+    }
+  }
+  res.redirect(retour || ('/alternants?voir=' + alternant_id));
+});
+
 router.post('/planning/commentaire', async (req, res) => {
   const { alternant_id, date, commentaire, retour } = req.body;
   if (req.profile.role !== 'admin' && req.profile.id !== alternant_id) {
