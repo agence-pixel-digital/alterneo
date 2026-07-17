@@ -5,7 +5,7 @@ const { requireAdmin } = require('../middleware');
 const { supabaseAdmin } = require('../supabaseClient');
 const { parseExcelPlanning } = require('../lib/planningExcel');
 const { buildMonthGrid, buildGlobalMonthGrid } = require('../lib/planningGrid');
-const { joursOuvresEntre, iso } = require('../lib/dates');
+const { joursOuvresEntre, iso, parseIsoLocal } = require('../lib/dates');
 const { deduireRecuperation } = require('../lib/heuresSupp');
 const { estFerie } = require('../lib/joursFeries');
 
@@ -133,6 +133,25 @@ router.post('/alternants/:id/planning-import', requireAdmin, upload.single('fich
   }
 });
 
+// Jour ouvré (hors week-ends et fériés) qui suit une date ISO.
+function prochainJourOuvre(dateIso) {
+  const d = parseIsoLocal(dateIso);
+  do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6 || estFerie(iso(d)));
+  return iso(d);
+}
+
+// Regroupe des dates ISO triées en périodes de jours ouvrés consécutifs
+// (un week-end ou un férié entre deux jours ne coupe pas la période).
+function grouperEnPeriodes(dates) {
+  const periodes = [];
+  dates.forEach(function (date) {
+    const derniere = periodes[periodes.length - 1];
+    if (derniere && prochainJourOuvre(derniere[derniere.length - 1]) === date) derniere.push(date);
+    else periodes.push([date]);
+  });
+  return periodes;
+}
+
 router.post('/alternants/:id/planning-import/confirmer', requireAdmin, async (req, res) => {
   const dates = [].concat(req.body.date || []);
   const types = [].concat(req.body.type || []);
@@ -147,7 +166,31 @@ router.post('/alternants/:id/planning-import/confirmer', requireAdmin, async (re
     }
   });
   if (rows.length) {
+    // Jours déjà en congé/récupération avant l'import : déjà comptés dans
+    // l'onglet Congés, on ne les recompte pas.
+    const { data: existants } = await req.db.from('planning')
+      .select('date,type').eq('alternant_id', req.params.id)
+      .in('date', rows.map(r => r.date));
+    const dejaConges = new Set((existants || [])
+      .filter(r => r.type === 'conge' || r.type === 'recuperation').map(r => r.date));
+
     await req.db.from('planning').upsert(rows, { onConflict: 'alternant_id,date' });
+
+    // Même logique que l'ajout manuel (/planning/periode) : les jours importés
+    // en congé/récupération alimentent l'onglet Congés — le solde en dépend.
+    for (const type of ['conge', 'recuperation']) {
+      const jours = rows.filter(r => r.type === type && !dejaConges.has(r.date)).map(r => r.date).sort();
+      for (const periode of grouperEnPeriodes(jours)) {
+        await supabaseAdmin.from('conges').insert({
+          alternant_id: req.params.id,
+          date_debut: periode[0], date_fin: periode[periode.length - 1],
+          jours: periode.length, statut: 'validee',
+          type: type === 'recuperation' ? 'recuperation' : 'paye',
+          commentaire: 'Importé depuis le planning Excel'
+        });
+        if (type === 'recuperation') await deduireRecuperation(req.db, req.params.id, periode);
+      }
+    }
   }
   res.redirect('/alternants?voir=' + req.params.id);
 });
