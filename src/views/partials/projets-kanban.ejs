@@ -1,0 +1,115 @@
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
+    <h3 style="margin:0;">Kanban</h3>
+    <button type="button" class="btn btn-primary" onclick="ouvrirModalTache()">+ Nouvelle tâche</button>
+  </div>
+
+  <form method="GET" action="/projets" class="inline-filter-bar js-autofilter" style="margin-bottom:18px;">
+    <input type="hidden" name="vue" value="kanban">
+    <div style="width:190px;">
+      <%- include('select-field', {
+        name: 'projet', value: filtreProjet, placeholder: 'Tous les projets',
+        options: [{ value: '', label: 'Tous les projets' }].concat(projetsActifs.map(p => ({ value: p.id, label: p.nom })))
+      }) %>
+    </div>
+    <% if (isAdmin) { %>
+      <div style="width:190px;">
+        <%- include('select-field', {
+          name: 'membre', value: filtreMembre, placeholder: 'Tous les membres',
+          options: [{ value: '', label: 'Tous les membres' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+        }) %>
+      </div>
+    <% } %>
+    <% if (filtreProjet || filtreMembre) { %><a href="/projets?vue=kanban" class="btn btn-outline">Réinitialiser</a><% } %>
+  </form>
+
+  <div class="kanban">
+    <% const DOTS = { a_faire: '#2E5C8A', en_cours: '#D9A441', termine: '#1F9D6B' }; %>
+    <% Object.entries(STATUTS).forEach(function([statut, label]) { %>
+      <% const cartes = tachesKanban.filter(t => t.statut === statut); %>
+      <div class="kanban-col" data-statut="<%= statut %>">
+        <div class="kanban-col-header">
+          <span><span class="type-dot" style="background:<%= DOTS[statut] %>;"></span><%= label %></span>
+          <span class="kanban-count"><%= cartes.length %></span>
+        </div>
+        <div class="kanban-cards">
+          <% cartes.forEach(function(t) { %>
+            <div class="kanban-card draggable" draggable="true"
+              data-id="<%= t.id %>" data-titre="<%= t.titre %>" data-description="<%= t.description || '' %>"
+              data-projet-id="<%= t.projet_id %>" data-projet-nom="<%= t.projets ? t.projets.nom : '' %>"
+              data-assigne-id="<%= t.assigne_id || '' %>" data-statut="<%= t.statut %>"
+              onclick="clicCarteKanban(this)"
+            >
+              <div style="font-size:13px;font-weight:700;"><%= t.titre %></div>
+              <div style="font-size:11.5px;color:#9AA7B5;font-weight:600;margin-top:3px;"><%= t.projets ? t.projets.nom : '' %></div>
+              <% if (t.profiles) { %>
+                <div style="display:flex;align-items:center;gap:7px;margin-top:8px;">
+                  <div class="avatar" style="width:22px;height:22px;font-size:9px;border-radius:7px;background:<%= t.profiles.avatar_color %>;"><%= (t.profiles.prenom[0]+t.profiles.nom[0]).toUpperCase() %></div>
+                  <span style="font-size:11.5px;font-weight:600;color:#5B6B7D;"><%= t.profiles.prenom %> <%= t.profiles.nom %></span>
+                </div>
+              <% } %>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var draggee = null;
+    var vientDeGlisser = false;
+
+    document.querySelectorAll('.kanban-card[draggable="true"]').forEach(function (card) {
+      card.addEventListener('dragstart', function (e) {
+        draggee = card;
+        vientDeGlisser = true;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', function () {
+        card.classList.remove('dragging');
+        setTimeout(function () { vientDeGlisser = false; }, 0);
+      });
+    });
+
+    document.querySelectorAll('.kanban-col').forEach(function (col) {
+      col.addEventListener('dragover', function (e) { e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', function () { col.classList.remove('drag-over'); });
+      col.addEventListener('drop', function (e) {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        if (!draggee) return;
+        var card = draggee;
+        draggee = null;
+        var statut = col.dataset.statut;
+        if (card.dataset.statut === statut) return;
+        fetch('/taches/' + card.dataset.id + '/statut', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' },
+          body: 'statut=' + encodeURIComponent(statut)
+        }).then(function (r) {
+          if (!r.ok) throw new Error();
+          card.dataset.statut = statut;
+          col.querySelector('.kanban-cards').appendChild(card);
+          majCompteurs();
+        }).catch(function () {
+          alert('Impossible de déplacer cette tâche.');
+        });
+      });
+    });
+
+    function majCompteurs() {
+      document.querySelectorAll('.kanban-col').forEach(function (c) {
+        c.querySelector('.kanban-count').textContent = c.querySelectorAll('.kanban-card').length;
+      });
+    }
+
+    // Le clic ouvre la modale — sauf s'il conclut un glisser-déposer.
+    window.clicCarteKanban = function (card) {
+      if (vientDeGlisser) return;
+      ouvrirModalModifierTache(card);
+    };
+  })();
+</script>

@@ -1,0 +1,102 @@
+<% if (locals.projetSelectionne) { %>
+  <% const ps = projetSelectionne; %>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div style="font-size:16.5px;font-weight:800;"><%= ps.nom %>
+          <span class="badge <%= ps.statut === 'actif' ? 'badge-validee' : 'badge-archive' %>" style="margin-left:8px;"><%= ps.statut === 'actif' ? 'Actif' : 'Archivé' %></span>
+        </div>
+        <div style="font-size:13px;color:#5B6B7D;font-weight:600;margin-top:5px;">
+          <%= formatDate(ps.date_debut) %> → <%= formatDate(ps.date_fin) %>
+          · <%= ps.nbTerminees %>/<%= ps.nbTaches %> tâche<%= ps.nbTaches > 1 ? 's' : '' %> terminée<%= ps.nbTerminees > 1 ? 's' : '' %>
+        </div>
+      </div>
+      <% if (ps.membres.length) { %>
+        <div class="avatar-stack">
+          <% ps.membres.forEach(function(m) { %>
+            <div class="avatar" style="background:<%= m.avatar_color %>;" title="<%= m.prenom %> <%= m.nom %>"><%= (m.prenom[0]+m.nom[0]).toUpperCase() %></div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+    <% if (ps.description) { %>
+      <p style="font-size:13.5px;color:#3B4657;line-height:1.65;margin:12px 0 0;white-space:pre-line;"><%= ps.description %></p>
+    <% } %>
+  </div>
+<% } %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
+    <h3 style="margin:0;">Tâches (<%= taches.length %>)</h3>
+    <button type="button" class="btn btn-primary" onclick="ouvrirModalTache()">+ Nouvelle tâche</button>
+  </div>
+
+  <form method="GET" action="/projets" class="inline-filter-bar js-autofilter" style="margin-bottom:18px;">
+    <input type="hidden" name="vue" value="taches">
+    <div style="width:190px;">
+      <%- include('select-field', {
+        name: 'projet', value: filtreProjet, placeholder: 'Tous les projets',
+        options: [{ value: '', label: 'Tous les projets' }].concat(projets.map(p => ({ value: p.id, label: p.nom })))
+      }) %>
+    </div>
+    <% if (isAdmin) { %>
+      <div style="width:190px;">
+        <%- include('select-field', {
+          name: 'membre', value: filtreMembre, placeholder: 'Tous les membres',
+          options: [{ value: '', label: 'Tous les membres' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+        }) %>
+      </div>
+    <% } %>
+    <input type="hidden" name="statut" value="<%= filtreStatut.join(',') %>" id="filtre-statut-input">
+    <div class="statut-pills">
+      <% Object.entries(STATUTS).forEach(function([value, label]) { %>
+        <button type="button" class="statut-pill <%= filtreStatut.includes(value) ? 'active' : '' %>" data-value="<%= value %>"><%= label %></button>
+      <% }); %>
+    </div>
+    <% if (filtreProjet || filtreMembre) { %><a href="/projets?vue=taches" class="btn btn-outline">Réinitialiser</a><% } %>
+  </form>
+
+  <% if (taches.length === 0) { %>
+    <div class="empty-state">Aucune tâche pour l'instant.</div>
+  <% } %>
+
+  <% taches.forEach(function(t) { %>
+    <div class="list-row" style="align-items:center;gap:14px;cursor:pointer;"
+      data-id="<%= t.id %>" data-titre="<%= t.titre %>" data-description="<%= t.description || '' %>"
+      data-projet-id="<%= t.projet_id %>" data-projet-nom="<%= t.projets ? t.projets.nom : '' %>"
+      data-assigne-id="<%= t.assigne_id || '' %>" data-statut="<%= t.statut %>"
+      onclick="ouvrirModalModifierTache(this)"
+    >
+      <div style="flex:1.6;min-width:150px;">
+        <div style="font-size:13.5px;font-weight:700;"><%= t.titre %></div>
+        <% if (t.description) { %><div style="font-size:12.5px;color:#9AA7B5;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px;"><%= t.description %></div><% } %>
+      </div>
+      <div style="flex:1;font-size:12.5px;color:#5B6B7D;font-weight:600;"><%= t.projets ? t.projets.nom : '—' %></div>
+      <div style="flex:1;display:flex;align-items:center;gap:8px;">
+        <% if (t.profiles) { %>
+          <div class="avatar" style="width:24px;height:24px;font-size:9.5px;border-radius:7px;background:<%= t.profiles.avatar_color %>;"><%= (t.profiles.prenom[0]+t.profiles.nom[0]).toUpperCase() %></div>
+          <span style="font-size:12.5px;font-weight:600;"><%= t.profiles.prenom %> <%= t.profiles.nom %></span>
+        <% } else { %>
+          <span class="muted" style="font-size:12.5px;">Non assignée</span>
+        <% } %>
+      </div>
+      <div style="flex:.6;text-align:right;">
+        <span class="badge <%= STATUT_BADGES[t.statut] %>"><%= STATUTS[t.statut] %></span>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<script>
+  // Filtre statut multi-sélection : chaque pastille se coche/décoche et
+  // resoumets le filtre ; aucune pastille active = tous les statuts.
+  document.querySelectorAll('.statut-pill').forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      pill.classList.toggle('active');
+      var actifs = Array.from(document.querySelectorAll('.statut-pill.active')).map(function (p) { return p.dataset.value; });
+      var hidden = document.getElementById('filtre-statut-input');
+      hidden.value = actifs.join(',');
+      hidden.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+</script>

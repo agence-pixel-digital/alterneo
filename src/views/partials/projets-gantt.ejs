@@ -1,0 +1,145 @@
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
+    <h3 style="margin:0;">Gantt par alternant</h3>
+    <div class="legend">
+      <div class="legend-item"><span class="type-dot dot-entreprise"></span>Projet</div>
+      <div class="legend-item"><span class="type-dot dot-ecole"></span>École</div>
+    </div>
+  </div>
+
+  <form method="GET" action="/projets" class="inline-filter-bar js-autofilter" style="margin-bottom:18px;">
+    <input type="hidden" name="vue" value="gantt">
+    <% if (isAdmin) { %>
+      <div style="width:190px;">
+        <%- include('select-field', {
+          name: 'membre', value: filtreMembre, placeholder: 'Tous les alternants',
+          options: [{ value: '', label: 'Tous les alternants' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+        }) %>
+      </div>
+    <% } %>
+    <div style="width:150px;"><%- include('month-input', { name: 'mois', value: filtreMois, clearable: true }) %></div>
+    <% if (filtreMembre || filtreMois) { %><a href="/projets?vue=gantt" class="btn btn-outline">Réinitialiser</a><% } %>
+  </form>
+
+  <% if (!gantt) { %>
+    <div class="empty-state">Aucun projet sur cette période.</div>
+  <% } else { %>
+  <% const nbMois = gantt.markers.length; %>
+  <div class="table-scroll gantt-scroll" id="gantt-scroll">
+  <div style="min-width:720px;<%= nbMois > 2 ? 'width:' + (nbMois * 50) + '%;' : '' %>">
+    <% const LANE_H = 36, BAR_H = 28; %>
+    <div style="position:relative;height:26px;margin:0 0 16px 200px;">
+      <% gantt.markers.forEach(function(mk) { %>
+        <div style="position:absolute;left:<%= mk.leftPct %>%;top:0;bottom:0;border-left:1px solid #DCE2EA;padding-left:6px;font-size:12.5px;color:#5B6B7D;font-weight:700;white-space:nowrap;"><%= mk.label %></div>
+      <% }); %>
+    </div>
+    <% gantt.lignes.forEach(function(ligne) { %>
+      <% const rowH = ligne.laneCount * LANE_H + 8; %>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+        <div class="row-flex gantt-name" style="width:190px;flex-shrink:0;height:<%= rowH %>px;align-items:flex-start;padding-top:<%= Math.max((Math.min(rowH, 66) - 30) / 2, 4) %>px;">
+          <div class="avatar" style="width:30px;height:30px;font-size:11.5px;background:<%= ligne.profile.avatar_color %>;"><%= (ligne.profile.prenom[0]+ligne.profile.nom[0]).toUpperCase() %></div>
+          <div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= ligne.profile.prenom %> <%= ligne.profile.nom %></div>
+        </div>
+        <div style="position:relative;flex:1;height:<%= rowH %>px;background:#F6F8FB;border-radius:9px;">
+          <% if (gantt.semaineActuelle) { %>
+            <div style="position:absolute;left:<%= gantt.semaineActuelle.leftPct %>%;width:<%= gantt.semaineActuelle.widthPct %>%;top:0;bottom:0;background:rgba(46,92,138,0.09);border-left:1px solid rgba(46,92,138,0.4);border-right:1px solid rgba(46,92,138,0.4);"></div>
+          <% } %>
+          <% gantt.semaines.forEach(function(s) { %>
+            <div style="position:absolute;left:<%= s.leftPct %>%;top:0;bottom:0;border-left:1px dashed #E3E8EF;"></div>
+          <% }); %>
+
+          <% ligne.ecole.forEach(function(e) { %>
+            <div class="gantt-item" style="position:absolute;top:<%= 4 + e.lane * LANE_H %>px;height:<%= BAR_H %>px;left:<%= e.leftPct %>%;width:<%= e.widthPct %>%;">
+              <div class="gantt-bar gantt-bar-ecole">
+                <span class="gantt-bar-label">École</span>
+              </div>
+              <div class="gantt-tooltip">Semaine de cours<br><span style="opacity:.75;font-weight:500;"><%= formatDate(e.date_debut) %> → <%= formatDate(e.date_fin) %></span></div>
+            </div>
+          <% }); %>
+
+          <% ligne.items.forEach(function(it) { %>
+            <% const p = it.projet; %>
+            <% const tachesMembre = p.taches.filter(t => !t.assigne_id || t.assigne_id === ligne.profile.id); %>
+            <div class="gantt-item" style="position:absolute;top:<%= 4 + it.lane * LANE_H %>px;height:<%= BAR_H %>px;left:<%= it.leftPct %>%;width:<%= it.widthPct %>%;"
+              data-id="<%= p.id %>" data-nom="<%= p.nom %>" data-description="<%= p.description || '' %>"
+              data-statut="<%= p.statut %>" data-membres="<%= p.membres.map(m => m.id).join(',') %>"
+              data-date-debut="<%= p.date_debut %>" data-date-fin="<%= p.date_fin %>"
+              data-date-debut-fr="<%= formatDate(p.date_debut) %>" data-date-fin-fr="<%= formatDate(p.date_fin) %>"
+              onclick="ouvrirModalModifierProjet(this)"
+            >
+              <div class="gantt-bar gantt-bar-editable">
+                <span class="gantt-bar-label"><%= p.nom %></span>
+              </div>
+              <div class="gantt-tooltip" style="white-space:normal;min-width:200px;text-align:left;">
+                <%= p.nom %><br>
+                <span style="opacity:.75;font-weight:500;"><%= formatDate(p.date_debut) %> → <%= formatDate(p.date_fin) %></span>
+                <% if (tachesMembre.length) { %>
+                  <div style="border-top:1px solid rgba(255,255,255,.25);margin-top:6px;padding-top:6px;">
+                    <% tachesMembre.forEach(function(t) { %>
+                      <div style="font-weight:500;"><span style="opacity:.7;">•</span> <%= t.titre %> <span style="opacity:.65;">(<%= STATUTS[t.statut] %><%= t.assigne_id ? '' : ', non assignée' %>)</span></div>
+                    <% }); %>
+                  </div>
+                <% } else { %>
+                  <div style="opacity:.65;font-weight:500;margin-top:5px;">Aucune tâche pour <%= ligne.profile.prenom %></div>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+  </div>
+  <% } %>
+</div>
+
+<script>
+  // Les tooltips du Gantt sont repositionnées en `position:fixed` au survol :
+  // sans cela, le conteneur scrollable (.table-scroll) les rogne.
+  (function () {
+    document.querySelectorAll('.gantt-item').forEach(function (item) {
+      var tip = item.querySelector('.gantt-tooltip');
+      if (!tip) return;
+      item.addEventListener('mouseenter', function () {
+        var r = item.getBoundingClientRect();
+        tip.style.position = 'fixed';
+        tip.style.bottom = 'auto';
+        tip.style.transform = 'none';
+        tip.style.display = 'block';
+        var tw = tip.offsetWidth, th = tip.offsetHeight;
+        var left = Math.min(Math.max(r.left + r.width / 2 - tw / 2, 8), window.innerWidth - tw - 8);
+        var top = r.top - th - 8;
+        if (top < 8) top = r.bottom + 8;
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      });
+      item.addEventListener('mouseleave', function () { tip.style.display = ''; });
+    });
+  })();
+
+  // Glisser-coulisser horizontal du Gantt à la souris pour parcourir les mois.
+  // Un vrai déplacement (> 4 px) neutralise le clic qui suivrait, pour ne pas
+  // ouvrir la modale d'un projet en relâchant la souris après un pan.
+  (function () {
+    var scroller = document.getElementById('gantt-scroll');
+    if (!scroller) return;
+    var enCours = false, aBouge = false, departX = 0, departScroll = 0;
+    scroller.addEventListener('mousedown', function (e) {
+      enCours = true; aBouge = false;
+      departX = e.pageX; departScroll = scroller.scrollLeft;
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!enCours) return;
+      var dx = e.pageX - departX;
+      if (Math.abs(dx) > 4) { aBouge = true; scroller.classList.add('panning'); }
+      scroller.scrollLeft = departScroll - dx;
+    });
+    window.addEventListener('mouseup', function () {
+      enCours = false;
+      scroller.classList.remove('panning');
+    });
+    scroller.addEventListener('click', function (e) {
+      if (aBouge) { e.stopPropagation(); e.preventDefault(); aBouge = false; }
+    }, true);
+  })();
+</script>

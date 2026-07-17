@@ -6,9 +6,9 @@ function jours(a, b) {
   return Math.round((parseIsoLocal(b) - parseIsoLocal(a)) / 86400000);
 }
 
-// Regroupe des dates (ISO, triées) en plages de jours consécutifs : les jours
-// d'école du planning deviennent ainsi des blocs hebdomadaires (la coupure du
-// week-end sépare naturellement chaque semaine de cours).
+// Regroupe des dates (ISO) en plages de jours consécutifs : les jours d'école
+// du planning deviennent ainsi des blocs hebdomadaires (la coupure du week-end
+// sépare naturellement chaque semaine de cours).
 function grouperEnPlages(dates) {
   const plages = [];
   dates.sort();
@@ -20,12 +20,11 @@ function grouperEnPlages(dates) {
   return plages;
 }
 
-// Construit les données d'un Gantt (une ligne par alternant, des barres
-// positionnées en % sur une frise temporelle bornée par options.debut/fin).
-// Les missions qui se chevauchent sont réparties sur des sous-lignes (lanes)
-// pour rester toutes visibles ; les semaines d'école occupent une sous-ligne
-// dédiée en haut, sous forme de blocs non modifiables.
-function buildGanttData(missions, fallbackProfile, options = {}) {
+// Construit les données du Gantt des projets : une ligne par alternant, avec
+// les barres des projets dont il est membre sur leur durée globale. Les
+// projets qui se chevauchent sont répartis sur des sous-lignes (lanes) ; les
+// semaines d'école occupent la sous-ligne du haut, en blocs non modifiables.
+function buildGanttProjets(projets, options = {}) {
   const min = options.debut;
   const max = options.fin;
   const totalDays = jours(min, max) + 1;
@@ -41,52 +40,50 @@ function buildGanttData(missions, fallbackProfile, options = {}) {
     return { leftPct: pct(d), widthPct: Math.max(1, ((jours(d, f) + 1) / totalDays) * 100) };
   }
 
-  const byAlternant = {};
-  function ligneDe(alternantId, profile) {
-    if (!byAlternant[alternantId]) byAlternant[alternantId] = { profile, items: [], ecole: [] };
-    return byAlternant[alternantId];
+  const byMembre = {};
+  function ligneDe(profile) {
+    if (!byMembre[profile.id]) byMembre[profile.id] = { profile, items: [], ecole: [] };
+    return byMembre[profile.id];
   }
 
-  (missions || []).forEach(m => {
-    const pos = barre(m.date_debut, m.date_fin);
+  (projets || []).forEach(p => {
+    const pos = barre(p.date_debut, p.date_fin);
     if (!pos) return;
-    const profile = m.profiles || fallbackProfile;
-    ligneDe(m.alternant_id, profile).items.push(Object.assign({
-      id: m.id, alternantId: m.alternant_id, titre: m.titre, description: m.description,
-      date_debut: m.date_debut, date_fin: m.date_fin
-    }, pos));
-  });
-
-  // Blocs école : une plage par groupe de jours consécutifs.
-  const ecoleParAlternant = {};
-  ecoleRows.forEach(r => {
-    (ecoleParAlternant[r.alternant_id] = ecoleParAlternant[r.alternant_id] || []).push(r.date);
-  });
-  Object.entries(ecoleParAlternant).forEach(([alternantId, dates]) => {
-    const profile = (options.profils && options.profils[alternantId]) || fallbackProfile;
-    if (!profile) return;
-    const ligne = ligneDe(alternantId, profile);
-    grouperEnPlages(dates).forEach(p => {
-      const pos = barre(p.debut, p.fin);
-      if (pos) ligne.ecole.push(Object.assign({ date_debut: p.debut, date_fin: p.fin }, pos));
+    (p.membres || []).forEach(m => {
+      ligneDe(m).items.push(Object.assign({ projet: p }, pos));
     });
   });
 
-  const lignes = Object.values(byAlternant).filter(l => l.items.length || l.ecole.length);
+  // Blocs école : une plage par groupe de jours consécutifs, sur la ligne du membre.
+  const ecoleParMembre = {};
+  ecoleRows.forEach(r => {
+    (ecoleParMembre[r.alternant_id] = ecoleParMembre[r.alternant_id] || []).push(r.date);
+  });
+  Object.entries(ecoleParMembre).forEach(([membreId, dates]) => {
+    const ligne = byMembre[membreId];
+    if (!ligne) return;
+    grouperEnPlages(dates).forEach(pl => {
+      const pos = barre(pl.debut, pl.fin);
+      if (pos) ligne.ecole.push(Object.assign({ date_debut: pl.debut, date_fin: pl.fin }, pos));
+    });
+  });
+
+  let lignes = Object.values(byMembre).filter(l => l.items.length || l.ecole.length);
+  if (options.membre) lignes = lignes.filter(l => l.profile.id === options.membre);
   if (lignes.length === 0) return null;
   lignes.sort((a, b) => (a.profile.prenom + a.profile.nom).localeCompare(b.profile.prenom + b.profile.nom));
 
-  // Répartition en sous-lignes : l'école occupe la lane 0, puis chaque mission
+  // Répartition en sous-lignes : l'école occupe la lane 0, puis chaque projet
   // prend la première lane libre (pas de chevauchement au sein d'une lane).
   lignes.forEach(l => {
     const premiere = l.ecole.length ? 1 : 0;
     l.ecole.forEach(e => { e.lane = 0; });
-    const lanesFin = []; // date de fin de la dernière barre de chaque lane mission
-    l.items.sort((a, b) => a.date_debut.localeCompare(b.date_debut) || b.date_fin.localeCompare(a.date_fin));
+    const lanesFin = []; // date de fin de la dernière barre de chaque lane projet
+    l.items.sort((a, b) => a.projet.date_debut.localeCompare(b.projet.date_debut) || b.projet.date_fin.localeCompare(a.projet.date_fin));
     l.items.forEach(it => {
       let lane = 0;
-      while (lanesFin[lane] && lanesFin[lane] >= it.date_debut) lane++;
-      lanesFin[lane] = it.date_fin;
+      while (lanesFin[lane] && lanesFin[lane] >= it.projet.date_debut) lane++;
+      lanesFin[lane] = it.projet.date_fin;
       it.lane = premiere + lane;
     });
     l.laneCount = premiere + Math.max(lanesFin.length, l.ecole.length ? 0 : 1);
@@ -102,7 +99,7 @@ function buildGanttData(missions, fallbackProfile, options = {}) {
     cursor.setMonth(cursor.getMonth() + 1);
   }
 
-  // Repères hebdomadaires (un trait discret chaque lundi) pour bien distinguer les semaines.
+  // Repères hebdomadaires (un trait discret chaque lundi).
   const semaines = [];
   const wCursor = parseIsoLocal(min);
   while (wCursor <= parseIsoLocal(max)) {
@@ -110,8 +107,7 @@ function buildGanttData(missions, fallbackProfile, options = {}) {
     wCursor.setDate(wCursor.getDate() + 1);
   }
 
-  // Semaine en cours (surbrillance) : permet de repérer d'un coup d'œil quelles
-  // missions sont actuellement en train d'être réalisées.
+  // Semaine en cours : bande grisée discrète sur chaque ligne (sans libellé).
   let semaineActuelle = null;
   const today = new Date();
   const dow = today.getDay(); // 0 = dimanche
@@ -124,8 +120,9 @@ function buildGanttData(missions, fallbackProfile, options = {}) {
   return { lignes, markers, semaines, semaineActuelle };
 }
 
-// Fenêtre d'affichage du Gantt : le mois demandé seul, ou par défaut le mois
-// en cours + le mois suivant.
+// Fenêtre d'affichage du Gantt : le mois demandé seul, ou par défaut 6 mois
+// à partir du mois en cours — on n'en voit que ~2 à l'écran, le reste se
+// découvre en faisant coulisser le Gantt à la souris.
 function fenetreGantt(mois) {
   let y, m; // m : 1-12
   if (mois && /^\d{4}-\d{2}$/.test(mois)) {
@@ -134,7 +131,7 @@ function fenetreGantt(mois) {
   }
   const now = new Date();
   y = now.getFullYear(); m = now.getMonth() + 1;
-  return { debut: `${y}-${String(m).padStart(2, '0')}-01`, fin: iso(new Date(y, m + 1, 0)) };
+  return { debut: `${y}-${String(m).padStart(2, '0')}-01`, fin: iso(new Date(y, m + 5, 0)) };
 }
 
-module.exports = { buildGanttData, fenetreGantt };
+module.exports = { buildGanttProjets, fenetreGantt };

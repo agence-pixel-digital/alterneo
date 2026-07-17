@@ -1,0 +1,200 @@
+<%- include('partials/header', { title: 'Projets', active: 'projets' }) %>
+
+<%
+  // URL de retour après une action : conserve l'onglet et les filtres courants.
+  const qs = [];
+  if (vue !== 'liste') qs.push('vue=' + vue);
+  if (filtreProjet) qs.push('projet=' + filtreProjet);
+  if (filtreMembre) qs.push('membre=' + filtreMembre);
+  if (vue === 'taches') qs.push('statut=' + filtreStatut.join(',')); // explicite : vide = « tous »
+  if (filtreMois) qs.push('mois=' + filtreMois);
+  if (voirArchives) qs.push('archives=1');
+  const retourCourant = '/projets' + (qs.length ? '?' + qs.join('&') : '');
+%>
+
+<div class="tabs">
+  <a href="/projets" class="<%= vue === 'liste' ? 'active' : '' %>">Projets</a>
+  <a href="/projets?vue=taches" class="<%= vue === 'taches' ? 'active' : '' %>">Tâches</a>
+  <a href="/projets?vue=kanban" class="<%= vue === 'kanban' ? 'active' : '' %>">Kanban</a>
+  <a href="/projets?vue=gantt" class="<%= vue === 'gantt' ? 'active' : '' %>">Gantt</a>
+</div>
+
+<% if (vue === 'liste') { %>
+  <%- include('partials/projets-liste', { retourCourant }) %>
+<% } else if (vue === 'taches') { %>
+  <%- include('partials/projets-taches', { retourCourant }) %>
+<% } else if (vue === 'kanban') { %>
+  <%- include('partials/projets-kanban', { retourCourant }) %>
+<% } else { %>
+  <%- include('partials/projets-gantt', { retourCourant }) %>
+<% } %>
+
+<div id="modal-projet" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;" id="modal-projet-titre">Nouveau projet</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-projet').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/projets" id="form-projet">
+      <input type="hidden" name="retour" value="<%= retourCourant %>">
+      <label>Nom du projet</label>
+      <input name="nom" required placeholder="ex. Refonte du site vitrine">
+      <%- include('partials/range-input', { debutName: 'date_debut', finName: 'date_fin' }) %>
+      <label>Description (optionnel)</label>
+      <textarea name="description" rows="3" placeholder="Objectifs, contexte, livrables…"></textarea>
+      <label>Membres de l'équipe</label>
+      <div class="membres-list">
+        <% alternants.forEach(function(a) { %>
+          <label class="membre-check">
+            <input type="checkbox" name="membres" value="<%= a.id %>" data-membre-check>
+            <span class="avatar" style="width:24px;height:24px;font-size:9.5px;border-radius:7px;background:<%= a.avatar_color %>;"><%= (a.prenom[0]+a.nom[0]).toUpperCase() %></span>
+            <%= a.prenom %> <%= a.nom %>
+          </label>
+        <% }); %>
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%;" id="modal-projet-submit">Créer le projet</button>
+    </form>
+    <% if (isAdmin) { %>
+    <div id="modal-projet-actions" style="display:none;margin-top:10px;">
+      <form method="POST" id="form-archiver-projet" action="">
+        <input type="hidden" name="retour" value="<%= retourCourant %>">
+        <button class="btn btn-outline" type="submit" style="width:100%;" id="btn-archiver-projet">Archiver ce projet</button>
+      </form>
+      <form method="POST" id="form-supprimer-projet" action="" style="margin-top:10px;"
+        onsubmit="return confirm('Supprimer définitivement ce projet et toutes ses tâches ?');">
+        <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer ce projet</button>
+      </form>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<div id="modal-tache" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;" id="modal-tache-titre">Nouvelle tâche</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-tache').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/taches" id="form-tache">
+      <input type="hidden" name="retour" value="<%= retourCourant %>">
+      <label>Projet</label>
+      <%- include('partials/select-field', { name: 'projet_id', id: 'tache-projet',
+        options: projets.map(p => ({ value: p.id, label: p.nom + (p.statut === 'archive' ? ' (archivé)' : '') })) }) %>
+      <label>Titre de la tâche</label>
+      <input name="titre" required placeholder="ex. Maquetter la page d'accueil">
+      <label>Description (optionnel)</label>
+      <textarea name="description" rows="3" placeholder="Détails de la tâche…"></textarea>
+      <label>Assignée à</label>
+      <%- include('partials/select-field', { name: 'assigne_id', id: 'tache-assigne', placeholder: 'Non assignée',
+        options: [{ value: '', label: 'Non assignée' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom }))) }) %>
+      <label>Statut</label>
+      <%- include('partials/select-field', { name: 'statut', id: 'tache-statut', value: 'a_faire',
+        options: Object.entries(STATUTS).map(([value, label]) => ({ value, label })) }) %>
+      <button class="btn btn-primary" type="submit" style="width:100%;" id="modal-tache-submit">Créer la tâche</button>
+    </form>
+    <% if (isAdmin) { %>
+    <form method="POST" id="form-supprimer-tache" action="" style="display:none;margin-top:10px;"
+      onsubmit="return confirm('Supprimer définitivement cette tâche ?');">
+      <input type="hidden" name="retour" value="<%= retourCourant %>">
+      <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer cette tâche</button>
+    </form>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  // Met à jour un composant select-field depuis le JS (valeur cachée + libellé).
+  function setSelect(id, value, placeholderLabel) {
+    var hidden = document.getElementById(id);
+    var field = hidden.closest('.select-field');
+    var opt = field.querySelector('.select-option[data-value="' + value + '"]');
+    field.querySelectorAll('.select-option').forEach(function (o) { o.classList.remove('selected'); });
+    if (!opt) {
+      hidden.value = '';
+      field.querySelector('.select-label').textContent = placeholderLabel || '';
+      return;
+    }
+    hidden.value = opt.dataset.value;
+    field.querySelector('.select-label').textContent = opt.dataset.label;
+    opt.classList.add('selected');
+  }
+
+  function remplirRange(modal, debut, fin, debutFr, finFr) {
+    modal.querySelector('.range-value-start').value = debut || '';
+    modal.querySelector('.range-value-end').value = fin || '';
+    modal.querySelector('.range-start').value = debutFr || '';
+    modal.querySelector('.range-end').value = finFr || '';
+  }
+
+  window.ouvrirModalProjet = function () {
+    var modal = document.getElementById('modal-projet');
+    var actions = document.getElementById('modal-projet-actions'); // admin uniquement
+    document.getElementById('modal-projet-titre').textContent = 'Nouveau projet';
+    document.getElementById('modal-projet-submit').textContent = 'Créer le projet';
+    document.getElementById('form-projet').action = '/projets';
+    if (actions) actions.style.display = 'none';
+    modal.querySelector('input[name="nom"]').value = '';
+    modal.querySelector('textarea[name="description"]').value = '';
+    remplirRange(modal, '', '', '', '');
+    modal.querySelectorAll('[data-membre-check]').forEach(function (c) { c.checked = false; });
+    modal.style.display = 'flex';
+  };
+
+  window.ouvrirModalModifierProjet = function (el) {
+    var d = el.dataset;
+    var modal = document.getElementById('modal-projet');
+    var actions = document.getElementById('modal-projet-actions'); // admin uniquement
+    document.getElementById('modal-projet-titre').textContent = 'Modifier le projet';
+    document.getElementById('modal-projet-submit').textContent = 'Enregistrer';
+    document.getElementById('form-projet').action = '/projets/' + d.id;
+    if (actions) {
+      document.getElementById('form-archiver-projet').action = '/projets/' + d.id + '/archiver';
+      document.getElementById('btn-archiver-projet').textContent = d.statut === 'archive' ? 'Réactiver ce projet' : 'Archiver ce projet';
+      document.getElementById('form-supprimer-projet').action = '/projets/' + d.id + '/supprimer';
+      actions.style.display = 'block';
+    }
+    modal.querySelector('input[name="nom"]').value = d.nom;
+    modal.querySelector('textarea[name="description"]').value = d.description || '';
+    remplirRange(modal, d.dateDebut, d.dateFin, d.dateDebutFr, d.dateFinFr);
+    var membres = (d.membres || '').split(',');
+    modal.querySelectorAll('[data-membre-check]').forEach(function (c) { c.checked = membres.indexOf(c.value) !== -1; });
+    modal.style.display = 'flex';
+  };
+
+  window.ouvrirModalTache = function () {
+    var modal = document.getElementById('modal-tache');
+    document.getElementById('modal-tache-titre').textContent = 'Nouvelle tâche';
+    document.getElementById('modal-tache-submit').textContent = 'Créer la tâche';
+    document.getElementById('form-tache').action = '/taches';
+    var suppr = document.getElementById('form-supprimer-tache'); // admin uniquement
+    if (suppr) suppr.style.display = 'none';
+    modal.querySelector('input[name="titre"]').value = '';
+    modal.querySelector('textarea[name="description"]').value = '';
+    setSelect('tache-assigne', '', 'Non assignée');
+    setSelect('tache-statut', 'a_faire');
+    modal.style.display = 'flex';
+  };
+
+  window.ouvrirModalModifierTache = function (el) {
+    var d = el.dataset;
+    var modal = document.getElementById('modal-tache');
+    document.getElementById('modal-tache-titre').textContent = 'Modifier la tâche';
+    document.getElementById('modal-tache-submit').textContent = 'Enregistrer';
+    document.getElementById('form-tache').action = '/taches/' + d.id;
+    var suppr = document.getElementById('form-supprimer-tache'); // admin uniquement
+    if (suppr) {
+      suppr.action = '/taches/' + d.id + '/supprimer';
+      suppr.style.display = 'block';
+    }
+    modal.querySelector('input[name="titre"]').value = d.titre;
+    modal.querySelector('textarea[name="description"]').value = d.description || '';
+    setSelect('tache-projet', d.projetId);
+    setSelect('tache-assigne', d.assigneId || '', 'Non assignée');
+    setSelect('tache-statut', d.statut);
+    modal.style.display = 'flex';
+  };
+</script>
+
+
+
+<%- include('partials/footer') %>

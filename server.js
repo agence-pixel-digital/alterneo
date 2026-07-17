@@ -42,7 +42,7 @@ app.use('/', require('./src/routes/ecole'));
 app.use('/', require('./src/routes/planning'));
 app.use('/', require('./src/routes/parametres'));
 app.use('/', require('./src/routes/envoiComptable'));
-app.use('/', require('./src/routes/missions'));
+app.use('/', require('./src/routes/projets'));
 app.use('/', require('./src/routes/compte'));
 
 app.listen(process.env.PORT || 3000, () => {

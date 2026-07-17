@@ -1,0 +1,64 @@
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
+    <h3 style="margin:0;"><%= voirArchives ? 'Projets archivés' : 'Projets' %> (<%= projetsListe.length %>)</h3>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <a href="/projets<%= voirArchives ? '' : '?archives=1' %>" class="btn btn-outline"><%= voirArchives ? '← Projets actifs' : 'Voir les archivés' %></a>
+      <button type="button" class="btn btn-primary" onclick="ouvrirModalProjet()">+ Nouveau projet</button>
+    </div>
+  </div>
+
+  <% if (isAdmin) { %>
+    <form method="GET" action="/projets" class="inline-filter-bar js-autofilter" style="margin-bottom:18px;">
+      <% if (voirArchives) { %><input type="hidden" name="archives" value="1"><% } %>
+      <div style="width:190px;">
+        <%- include('select-field', {
+          name: 'membre', value: filtreMembre, placeholder: 'Tous les membres',
+          options: [{ value: '', label: 'Tous les membres' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+        }) %>
+      </div>
+      <% if (filtreMembre) { %><a href="/projets<%= voirArchives ? '?archives=1' : '' %>" class="btn btn-outline">Réinitialiser</a><% } %>
+    </form>
+  <% } %>
+
+  <% if (projetsListe.length === 0) { %>
+    <div class="empty-state"><%= voirArchives ? 'Aucun projet archivé.' : 'Aucun projet pour l\'instant.' %></div>
+  <% } %>
+
+  <% projetsListe.forEach(function(p) { %>
+    <% const pct = p.nbTaches ? Math.round(p.nbTerminees / p.nbTaches * 100) : 0; %>
+    <div class="list-row projet-row" style="align-items:center;gap:14px;cursor:pointer;"
+      onclick="window.location='/projets?vue=taches&projet=<%= p.id %>&statut='"
+        data-id="<%= p.id %>" data-nom="<%= p.nom %>" data-description="<%= p.description || '' %>"
+        data-statut="<%= p.statut %>" data-membres="<%= p.membres.map(m => m.id).join(',') %>"
+        data-date-debut="<%= p.date_debut %>" data-date-fin="<%= p.date_fin %>"
+        data-date-debut-fr="<%= formatDate(p.date_debut) %>" data-date-fin-fr="<%= formatDate(p.date_fin) %>"
+    >
+      <div style="flex:1.6;min-width:150px;">
+        <div style="font-size:13.5px;font-weight:700;"><%= p.nom %>
+          <span class="badge <%= p.statut === 'actif' ? 'badge-validee' : 'badge-archive' %>" style="margin-left:8px;"><%= p.statut === 'actif' ? 'Actif' : 'Archivé' %></span>
+        </div>
+        <% if (p.description) { %><div style="font-size:12.5px;color:#9AA7B5;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px;"><%= p.description %></div><% } %>
+      </div>
+      <div style="flex:1;font-size:13px;color:#5B6B7D;white-space:nowrap;"><%= formatDate(p.date_debut) %> → <%= formatDate(p.date_fin) %></div>
+      <div style="flex:.9;">
+        <% if (p.membres.length === 0) { %>
+          <span class="muted" style="font-size:12.5px;">Aucun membre</span>
+        <% } else { %>
+          <div class="avatar-stack">
+            <% p.membres.forEach(function(m) { %>
+              <div class="avatar" style="background:<%= m.avatar_color %>;" title="<%= m.prenom %> <%= m.nom %>"><%= (m.prenom[0]+m.nom[0]).toUpperCase() %></div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+      <div style="flex:1.2;min-width:130px;">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:#5B6B7D;margin-bottom:4px;">
+          <span><%= p.nbTerminees %>/<%= p.nbTaches %> tâche<%= p.nbTaches > 1 ? 's' : '' %></span><span><%= pct %>%</span>
+        </div>
+        <div class="progress-bar"><div style="width:<%= pct %>%;"></div></div>
+      </div>
+      <button type="button" class="btn btn-outline" style="flex-shrink:0;"
+        onclick="event.stopPropagation();ouvrirModalModifierProjet(this.closest('.projet-row'))">Modifier</button>
+    </div>
+  <% }); %>
+</div>

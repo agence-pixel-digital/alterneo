@@ -8,15 +8,14 @@
     <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter-absence').style.display='flex'">+ Ajouter</button>
   </div>
   <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 14px;">Jours déclarés où les alternants n'ont pas pu assister aux cours.</p>
-  <form method="GET" action="/ecole" class="inline-filter-bar" style="margin-bottom:18px;">
+  <form method="GET" action="/ecole" class="inline-filter-bar js-autofilter" style="margin-bottom:18px;">
     <div style="width:190px;">
       <%- include('partials/select-field', {
         name: 'alt', value: filtreAlt, placeholder: 'Tous les alternants',
         options: [{ value: '', label: 'Tous les alternants' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
       }) %>
     </div>
-    <div style="width:150px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois }) %></div>
-    <button class="btn btn-outline" type="submit">Filtrer</button>
+    <div style="width:150px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois, clearable: true }) %></div>
     <% if (filtreAlt || filtreMois) { %><a href="/ecole" class="btn btn-outline">Réinitialiser</a><% } %>
   </form>
   <% if (absences.length === 0) { %>
