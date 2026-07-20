@@ -9,7 +9,10 @@ const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
-app.use(express.urlencoded({ extended: true }));
+// Limites relevées : l'import d'un planning sur une année complète produit un
+// formulaire de plusieurs centaines de lignes (donc >1000 paramètres et
+// potentiellement >100 ko), au-delà des valeurs par défaut d'Express.
+app.use(express.urlencoded({ extended: true, limit: '5mb', parameterLimit: 100000 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Disponible dans toutes les vues EJS : formatDate('2026-07-04') -> '04/07/2026'
