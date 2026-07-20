@@ -42,7 +42,7 @@ function buildGanttProjets(projets, options = {}) {
 
   const byMembre = {};
   function ligneDe(profile) {
-    if (!byMembre[profile.id]) byMembre[profile.id] = { profile, items: [], ecole: [] };
+    if (!byMembre[profile.id]) byMembre[profile.id] = { profile, items: [], ecole: [], conges: [] };
     return byMembre[profile.id];
   }
 
@@ -68,7 +68,22 @@ function buildGanttProjets(projets, options = {}) {
     });
   });
 
-  let lignes = Object.values(byMembre).filter(l => l.items.length || l.ecole.length);
+  // Blocs congés/récupérations : même regroupement que l'école, sur la même
+  // sous-ligne (un jour ne peut pas être à la fois école et congé).
+  const congesParMembre = {};
+  (options.conges || []).forEach(r => {
+    (congesParMembre[r.alternant_id] = congesParMembre[r.alternant_id] || []).push(r.date);
+  });
+  Object.entries(congesParMembre).forEach(([membreId, dates]) => {
+    const ligne = byMembre[membreId];
+    if (!ligne) return;
+    grouperEnPlages(dates).forEach(pl => {
+      const pos = barre(pl.debut, pl.fin);
+      if (pos) ligne.conges.push(Object.assign({ date_debut: pl.debut, date_fin: pl.fin }, pos));
+    });
+  });
+
+  let lignes = Object.values(byMembre).filter(l => l.items.length || l.ecole.length || l.conges.length);
   if (options.membre) lignes = lignes.filter(l => l.profile.id === options.membre);
   if (lignes.length === 0) return null;
   lignes.sort((a, b) => (a.profile.prenom + a.profile.nom).localeCompare(b.profile.prenom + b.profile.nom));
@@ -76,8 +91,9 @@ function buildGanttProjets(projets, options = {}) {
   // Répartition en sous-lignes : l'école occupe la lane 0, puis chaque projet
   // prend la première lane libre (pas de chevauchement au sein d'une lane).
   lignes.forEach(l => {
-    const premiere = l.ecole.length ? 1 : 0;
+    const premiere = (l.ecole.length || l.conges.length) ? 1 : 0;
     l.ecole.forEach(e => { e.lane = 0; });
+    l.conges.forEach(c => { c.lane = 0; });
     const lanesFin = []; // date de fin de la dernière barre de chaque lane projet
     l.items.sort((a, b) => a.projet.date_debut.localeCompare(b.projet.date_debut) || b.projet.date_fin.localeCompare(a.projet.date_fin));
     l.items.forEach(it => {
@@ -86,7 +102,7 @@ function buildGanttProjets(projets, options = {}) {
       lanesFin[lane] = it.projet.date_fin;
       it.lane = premiere + lane;
     });
-    l.laneCount = premiere + Math.max(lanesFin.length, l.ecole.length ? 0 : 1);
+    l.laneCount = premiere + Math.max(lanesFin.length, (l.ecole.length || l.conges.length) ? 0 : 1);
   });
 
   // Repères mensuels : un trait + libellé au 1er de chaque mois de la fenêtre.
@@ -117,7 +133,29 @@ function buildGanttProjets(projets, options = {}) {
   const posSemaine = barre(iso(lundi), iso(dimanche));
   if (posSemaine) semaineActuelle = posSemaine;
 
-  return { lignes, markers, semaines, semaineActuelle };
+  // Bandes week-end (samedi + dimanche), sans largeur minimale pour rester
+  // exactes même sur une fenêtre de 6 mois.
+  const weekends = [];
+  const wk = parseIsoLocal(min);
+  while (wk <= parseIsoLocal(max)) {
+    const day = wk.getDay();
+    if (day === 6 || (day === 0 && iso(wk) === min)) {
+      const debut = iso(wk);
+      const finWk = new Date(wk.getFullYear(), wk.getMonth(), wk.getDate() + (day === 6 ? 1 : 0));
+      const fin = iso(finWk) > max ? max : iso(finWk);
+      weekends.push({ leftPct: pct(debut), widthPct: ((jours(debut, fin) + 1) / totalDays) * 100 });
+    }
+    wk.setDate(wk.getDate() + 1);
+  }
+
+  // Position de la date du jour (fraction 0-1, au milieu du jour) pour tracer
+  // une ligne verticale continue sur toute la hauteur du Gantt.
+  const todayIso = iso(today);
+  const aujourdHui = todayIso >= min && todayIso <= max
+    ? { frac: (jours(min, todayIso) + 0.5) / totalDays }
+    : null;
+
+  return { lignes, markers, semaines, semaineActuelle, weekends, aujourdHui };
 }
 
 // Fenêtre d'affichage du Gantt : le mois demandé seul, ou par défaut 6 mois

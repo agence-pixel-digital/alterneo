@@ -76,21 +76,22 @@ router.get('/projets', async (req, res) => {
     (!filtreMembre || t.assigne_id === filtreMembre));
 
   // Gantt : une ligne par alternant, avec les projets actifs dont il est
-  // membre dans la fenêtre + ses semaines d'école.
+  // membre dans la fenêtre + ses semaines d'école et ses congés.
   let gantt = null;
   let fenetre = null;
   if (vue === 'gantt') {
     fenetre = fenetreGantt(filtreMois);
     const membreIds = [...new Set(projetsActifs.flatMap(p => p.membres.map(m => m.id)))]
       .filter(id => !filtreMembre || id === filtreMembre);
-    let ecoleRows = [];
+    let ecoleRows = [], congeRows = [];
     if (membreIds.length) {
-      const { data } = await db.from('planning').select('alternant_id, date')
-        .eq('type', 'ecole').in('alternant_id', membreIds)
+      const { data } = await db.from('planning').select('alternant_id, date, type')
+        .in('type', ['ecole', 'conge', 'recuperation']).in('alternant_id', membreIds)
         .gte('date', fenetre.debut).lte('date', fenetre.fin);
-      ecoleRows = data || [];
+      ecoleRows = (data || []).filter(r => r.type === 'ecole');
+      congeRows = (data || []).filter(r => r.type !== 'ecole');
     }
-    gantt = buildGanttProjets(projetsActifs, Object.assign({ ecole: ecoleRows, membre: filtreMembre }, fenetre));
+    gantt = buildGanttProjets(projetsActifs, Object.assign({ ecole: ecoleRows, conges: congeRows, membre: filtreMembre }, fenetre));
   }
 
   res.render('projets', {
