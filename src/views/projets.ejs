@@ -8,7 +8,7 @@
   if (filtreMembre) qs.push('membre=' + filtreMembre);
   if (vue === 'taches') qs.push('statut=' + filtreStatut.join(',')); // explicite : vide = « tous »
   if (filtreMois) qs.push('mois=' + filtreMois);
-  if (voirArchives) qs.push('archives=1');
+  if (filtreStatutProjet !== 'actif') qs.push('pstatut=' + filtreStatutProjet); // défaut = actif
   const retourCourant = '/projets' + (qs.length ? '?' + qs.join('&') : '');
 %>
 
@@ -42,6 +42,9 @@
       <%- include('partials/range-input', { debutName: 'date_debut', finName: 'date_fin' }) %>
       <label>Description (optionnel)</label>
       <textarea name="description" rows="3" placeholder="Objectifs, contexte, livrables…"></textarea>
+      <label>Statut</label>
+      <%- include('partials/select-field', { name: 'statut', id: 'projet-statut', value: 'actif',
+        options: PROJET_STATUTS.map(v => ({ value: v, label: STATUT_PROJET[v] })) }) %>
       <label>Membres de l'équipe</label>
       <div class="membres-list">
         <% alternants.forEach(function(a) { %>
@@ -54,19 +57,15 @@
       </div>
       <button class="btn btn-primary" type="submit" style="width:100%;" id="modal-projet-submit">Créer le projet</button>
     </form>
+    <% if (isAdmin) { %>
     <div id="modal-projet-actions" style="display:none;margin-top:10px;">
-      <form method="POST" id="form-archiver-projet" action="">
-        <input type="hidden" name="retour" value="<%= retourCourant %>">
-        <button class="btn btn-outline" type="submit" style="width:100%;" id="btn-archiver-projet">Archiver ce projet</button>
-      </form>
-      <% if (isAdmin) { %>
-      <form method="POST" id="form-supprimer-projet" action="" style="margin-top:10px;"
+      <form method="POST" id="form-supprimer-projet" action=""
         onsubmit="return confirm('Supprimer définitivement ce projet et toutes ses tâches ?');">
         <input type="hidden" name="retour" value="<%= retourCourant %>">
         <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer ce projet</button>
       </form>
-      <% } %>
     </div>
+    <% } %>
   </div>
 </div>
 
@@ -80,7 +79,7 @@
       <input type="hidden" name="retour" value="<%= retourCourant %>">
       <label>Projet</label>
       <%- include('partials/select-field', { name: 'projet_id', id: 'tache-projet',
-        options: projets.map(p => ({ value: p.id, label: p.nom + (p.statut === 'archive' ? ' (archivé)' : '') })) }) %>
+        options: projets.map(p => ({ value: p.id, label: p.nom + (p.statut !== 'actif' ? ' (' + STATUT_PROJET[p.statut] + ')' : '') })) }) %>
       <label>Titre de la tâche</label>
       <input name="titre" required placeholder="ex. Maquetter la page d'accueil">
       <label>Description (optionnel)</label>
@@ -137,6 +136,7 @@
     modal.querySelector('input[name="nom"]').value = '';
     modal.querySelector('textarea[name="description"]').value = '';
     remplirRange(modal, '', '', '', '');
+    setSelect('projet-statut', 'actif');
     modal.querySelectorAll('[data-membre-check]').forEach(function (c) { c.checked = false; });
     modal.style.display = 'flex';
   };
@@ -149,8 +149,6 @@
     document.getElementById('modal-projet-submit').textContent = 'Enregistrer';
     document.getElementById('form-projet').action = '/projets/' + d.id;
     if (actions) {
-      document.getElementById('form-archiver-projet').action = '/projets/' + d.id + '/archiver';
-      document.getElementById('btn-archiver-projet').textContent = d.statut === 'archive' ? 'Réactiver ce projet' : 'Archiver ce projet';
       var supprP = document.getElementById('form-supprimer-projet'); // admin uniquement
       if (supprP) supprP.action = '/projets/' + d.id + '/supprimer';
       actions.style.display = 'block';
@@ -158,6 +156,7 @@
     modal.querySelector('input[name="nom"]').value = d.nom;
     modal.querySelector('textarea[name="description"]').value = d.description || '';
     remplirRange(modal, d.dateDebut, d.dateFin, d.dateDebutFr, d.dateFinFr);
+    setSelect('projet-statut', d.statut);
     var membres = (d.membres || '').split(',');
     modal.querySelectorAll('[data-membre-check]').forEach(function (c) { c.checked = membres.indexOf(c.value) !== -1; });
     modal.style.display = 'flex';

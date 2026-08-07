@@ -4,7 +4,7 @@
     <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;">
       <div>
         <div style="font-size:16.5px;font-weight:800;"><%= ps.nom %>
-          <span class="badge <%= ps.statut === 'actif' ? 'badge-validee' : 'badge-archive' %>" style="margin-left:8px;"><%= ps.statut === 'actif' ? 'Actif' : 'Archivé' %></span>
+          <span class="badge <%= STATUT_PROJET_BADGE[ps.statut] %>" style="margin-left:8px;"><%= STATUT_PROJET[ps.statut] %></span>
         </div>
         <div style="font-size:13px;color:#5B6B7D;font-weight:600;margin-top:5px;">
           <%= formatDate(ps.date_debut) %> → <%= formatDate(ps.date_fin) %>

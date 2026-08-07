@@ -6,6 +6,9 @@ const { buildGanttProjets, fenetreGantt } = require('../lib/ganttProjets');
 
 const VUES = ['liste', 'taches', 'kanban', 'gantt'];
 const TACHE_STATUTS = ['a_faire', 'en_cours', 'termine'];
+const PROJET_STATUTS = ['actif', 'en_attente', 'termine'];
+const STATUT_PROJET = { actif: 'Actif', en_attente: 'En attente', termine: 'Terminé' };
+const STATUT_PROJET_BADGE = { actif: 'badge-validee', en_attente: 'badge-encours', termine: 'badge-archive' };
 
 function normaliseMembres(body) {
   return [].concat(body.membres || []).filter(Boolean);
@@ -29,7 +32,11 @@ router.get('/projets', async (req, res) => {
   if (req.query.statut === undefined) filtreStatut = vue === 'taches' ? ['a_faire', 'en_cours'] : [];
   else filtreStatut = String(req.query.statut).split(',').filter(s => TACHE_STATUTS.includes(s));
   const filtreMois = req.query.mois || '';
-  const voirArchives = req.query.archives === '1';
+  // Filtre statut projet : par défaut « Actif » ; un ?pstatut= explicitement
+  // vide signifie « tous les statuts ».
+  let filtreStatutProjet;
+  if (req.query.pstatut === undefined) filtreStatutProjet = 'actif';
+  else filtreStatutProjet = PROJET_STATUTS.includes(req.query.pstatut) ? req.query.pstatut : '';
 
   // RLS : un membre ne reçoit que les projets dont il fait partie (et leurs tâches).
   // La liste des alternants sert aussi aux membres : choix des membres d'un
@@ -58,7 +65,7 @@ router.get('/projets', async (req, res) => {
   const parProjet = t => !filtreProjet || t.projet_id === filtreProjet;
 
   const projetsActifs = projets.filter(p => p.statut === 'actif');
-  const projetsListe = projets.filter(p => (voirArchives ? p.statut === 'archive' : p.statut === 'actif') && parMembre(p));
+  const projetsListe = projets.filter(p => (!filtreStatutProjet || p.statut === filtreStatutProjet) && parMembre(p));
 
   // Vue Tâches : tous projets confondus, filtrable par projet / membre / statuts.
   const tachesListe = taches.filter(t =>
@@ -102,11 +109,12 @@ router.get('/projets', async (req, res) => {
     isAdmin, vue,
     STATUTS: { a_faire: 'À faire', en_cours: 'En cours', termine: 'Terminé' },
     STATUT_BADGES: { a_faire: 'badge-afaire', en_cours: 'badge-encours', termine: 'badge-termine' },
+    STATUT_PROJET, STATUT_PROJET_BADGE, PROJET_STATUTS,
     projets, projetsListe, projetsActifs, projetSelectionne,
     taches: tachesListe, tachesKanban,
     alternants: alternants || [],
     gantt,
-    filtreProjet, filtreMembre, filtreStatut, filtreMois, voirArchives,
+    filtreProjet, filtreMembre, filtreStatut, filtreMois, filtreStatutProjet,
     moi: req.profile.id
   });
 });
@@ -117,11 +125,12 @@ router.get('/projets', async (req, res) => {
 // coup ; l'appartenance forcée joue le rôle de garde-fou.
 router.post('/projets', async (req, res) => {
   const { nom, description, date_debut, date_fin } = req.body;
+  const statut = PROJET_STATUTS.includes(req.body.statut) ? req.body.statut : 'actif';
   let membres = normaliseMembres(req.body);
   if (req.profile.role !== 'admin' && !membres.includes(req.profile.id)) membres.push(req.profile.id);
   if (nom && date_debut && date_fin) {
     const { data: projet } = await supabaseAdmin.from('projets')
-      .insert({ nom, description: description || null, date_debut, date_fin })
+      .insert({ nom, description: description || null, date_debut, date_fin, statut })
       .select('id').single();
     if (projet && membres.length) {
       await supabaseAdmin.from('projet_membres').insert(membres.map(id => ({ projet_id: projet.id, profile_id: id })));
@@ -133,12 +142,13 @@ router.post('/projets', async (req, res) => {
 // Modification ouverte aux membres du projet (la RLS refuse les non-membres).
 router.post('/projets/:id', async (req, res) => {
   const { nom, description, date_debut, date_fin } = req.body;
+  const statut = PROJET_STATUTS.includes(req.body.statut) ? req.body.statut : 'actif';
   const isAdmin = req.profile.role === 'admin';
   let membres = normaliseMembres(req.body);
   if (!isAdmin && !membres.includes(req.profile.id)) membres.push(req.profile.id);
   if (nom && date_debut && date_fin) {
     const { data: modifie } = await req.db.from('projets')
-      .update({ nom, description: description || null, date_debut, date_fin })
+      .update({ nom, description: description || null, date_debut, date_fin, statut })
       .eq('id', req.params.id).select('id');
     if (modifie && modifie.length) {
       // Les membres sont remplacés par la sélection du formulaire. Un membre
@@ -156,18 +166,9 @@ router.post('/projets/:id', async (req, res) => {
   res.redirect(retourOu(req, '/projets'));
 });
 
-// Archivage/réactivation ouvert aux membres du projet (la RLS refuse les
-// non-membres) ; seule la suppression définitive reste réservée à l'admin.
-router.post('/projets/:id/archiver', async (req, res) => {
-  const { data: projet } = await req.db.from('projets').select('statut').eq('id', req.params.id).maybeSingle();
-  if (projet) {
-    await req.db.from('projets')
-      .update({ statut: projet.statut === 'actif' ? 'archive' : 'actif' })
-      .eq('id', req.params.id);
-  }
-  res.redirect(retourOu(req, '/projets'));
-});
-
+// Le statut d'un projet (Actif / En attente / Terminé) est modifié via le
+// sélecteur de la fenêtre d'édition (route POST /projets/:id) ; seule la
+// suppression définitive reste réservée à l'admin.
 router.post('/projets/:id/supprimer', requireAdmin, async (req, res) => {
   await req.db.from('projets').delete().eq('id', req.params.id);
   res.redirect(retourOu(req, '/projets'));

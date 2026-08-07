@@ -1,29 +1,31 @@
 <div class="card">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
-    <h3 style="margin:0;"><%= voirArchives ? 'Projets archivés' : 'Projets' %> (<span id="projet-count"><%= projetsListe.length %></span>)</h3>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+    <h3 style="margin:0;">Projets (<span id="projet-count"><%= projetsListe.length %></span>)</h3>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <input type="search" id="projet-search" placeholder="Rechercher un projet…" autocomplete="off"
-        style="height:40px;padding:0 14px;border:1px solid #DCE2EA;border-radius:10px;font-size:13.5px;min-width:210px;">
-      <a href="/projets<%= voirArchives ? '' : '?archives=1' %>" class="btn btn-outline"><%= voirArchives ? '← Projets actifs' : 'Voir les archivés' %></a>
+        style="flex:0 0 auto;width:210px;height:40px;padding:0 14px;border:1px solid #DCE2EA;border-radius:10px;font-size:13.5px;">
+      <form method="GET" action="/projets" class="js-autofilter" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0;">
+        <div style="width:165px;">
+          <%- include('select-field', {
+            name: 'pstatut', value: filtreStatutProjet, placeholder: 'Tous les statuts',
+            options: [{ value: '', label: 'Tous les statuts' }].concat(PROJET_STATUTS.map(v => ({ value: v, label: STATUT_PROJET[v] })))
+          }) %>
+        </div>
+        <% if (isAdmin) { %>
+          <div style="width:180px;">
+            <%- include('select-field', {
+              name: 'membre', value: filtreMembre, placeholder: 'Tous les membres',
+              options: [{ value: '', label: 'Tous les membres' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
+            }) %>
+          </div>
+        <% } %>
+      </form>
       <button type="button" class="btn btn-primary" onclick="ouvrirModalProjet()">+ Nouveau projet</button>
     </div>
   </div>
 
-  <% if (isAdmin) { %>
-    <form method="GET" action="/projets" class="inline-filter-bar js-autofilter" style="margin-bottom:18px;">
-      <% if (voirArchives) { %><input type="hidden" name="archives" value="1"><% } %>
-      <div style="width:190px;">
-        <%- include('select-field', {
-          name: 'membre', value: filtreMembre, placeholder: 'Tous les membres',
-          options: [{ value: '', label: 'Tous les membres' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
-        }) %>
-      </div>
-      <% if (filtreMembre) { %><a href="/projets<%= voirArchives ? '?archives=1' : '' %>" class="btn btn-outline">Réinitialiser</a><% } %>
-    </form>
-  <% } %>
-
   <% if (projetsListe.length === 0) { %>
-    <div class="empty-state"><%= voirArchives ? 'Aucun projet archivé.' : 'Aucun projet pour l\'instant.' %></div>
+    <div class="empty-state">Aucun projet à afficher.</div>
   <% } %>
 
   <% projetsListe.forEach(function(p) { %>
@@ -37,7 +39,7 @@
     >
       <div style="flex:1.6;min-width:150px;">
         <div style="font-size:13.5px;font-weight:700;"><%= p.nom %>
-          <span class="badge <%= p.statut === 'actif' ? 'badge-validee' : 'badge-archive' %>" style="margin-left:8px;"><%= p.statut === 'actif' ? 'Actif' : 'Archivé' %></span>
+          <span class="badge <%= STATUT_PROJET_BADGE[p.statut] %>" style="margin-left:8px;"><%= STATUT_PROJET[p.statut] %></span>
         </div>
         <% if (p.description) { %><div style="font-size:12.5px;color:#9AA7B5;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px;"><%= p.description %></div><% } %>
       </div>
