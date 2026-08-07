@@ -1,7 +1,9 @@
 <div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:6px;">
-    <h3 style="margin:0;"><%= voirArchives ? 'Projets archivés' : 'Projets' %> (<%= projetsListe.length %>)</h3>
+    <h3 style="margin:0;"><%= voirArchives ? 'Projets archivés' : 'Projets' %> (<span id="projet-count"><%= projetsListe.length %></span>)</h3>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <input type="search" id="projet-search" placeholder="Rechercher un projet…" autocomplete="off"
+        style="height:40px;padding:0 14px;border:1px solid #DCE2EA;border-radius:10px;font-size:13.5px;min-width:210px;">
       <a href="/projets<%= voirArchives ? '' : '?archives=1' %>" class="btn btn-outline"><%= voirArchives ? '← Projets actifs' : 'Voir les archivés' %></a>
       <button type="button" class="btn btn-primary" onclick="ouvrirModalProjet()">+ Nouveau projet</button>
     </div>
@@ -62,3 +64,24 @@
     </div>
   <% }); %>
 </div>
+
+<script>
+  // Recherche live par nom de projet : filtre les lignes déjà rendues côté
+  // client (pas de rechargement) et met à jour le compteur.
+  (function () {
+    var input = document.getElementById('projet-search');
+    if (!input) return;
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.projet-row'));
+    var compteur = document.getElementById('projet-count');
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      var n = 0;
+      rows.forEach(function (r) {
+        var ok = (r.dataset.nom || '').toLowerCase().indexOf(q) !== -1;
+        r.style.display = ok ? '' : 'none';
+        if (ok) n++;
+      });
+      if (compteur) compteur.textContent = n;
+    });
+  })();
+</script>

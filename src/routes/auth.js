@@ -3,7 +3,15 @@ const router = express.Router();
 const { supabaseAnon, supabaseAdmin } = require('../supabaseClient');
 
 router.get('/login', (req, res) => {
-  res.render('login', { error: null, success: null });
+  res.render('login', { error: null, success: null, expired: req.query.expired === '1' });
+});
+
+// Ping léger interrogé périodiquement par le client pour savoir si la session
+// est toujours active (cookie de session non expiré). Monté avant requireAuth,
+// il ne redirige pas : il renvoie simplement l'état en JSON.
+router.get('/api/session', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ authenticated: !!req.session.access_token });
 });
 
 router.post('/login', async (req, res) => {

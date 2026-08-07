@@ -13,6 +13,7 @@
       <p style="color:#6B7A8D;font-size:14px;margin:0 0 24px;">Accédez à votre espace Alternéo.</p>
       <% if (error) { %><div class="error"><%= error %></div><% } %>
       <% if (success) { %><div style="background:#E2F3EB;color:#15784F;padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;"><%= success %></div><% } %>
+      <% if (locals.expired) { %><div style="background:#FBF1E4;color:#8A5B18;padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;">Votre session a expiré, merci de vous reconnecter.</div><% } %>
       <form method="POST" action="/login">
         <label>Adresse e-mail</label>
         <input type="email" name="email" required>

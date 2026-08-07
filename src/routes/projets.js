@@ -70,10 +70,14 @@ router.get('/projets', async (req, res) => {
   // Projet mis en avant quand la vue Tâches est filtrée sur un projet précis.
   const projetSelectionne = filtreProjet ? projets.find(p => p.id === filtreProjet) || null : null;
 
-  // Kanban : les projets archivés n'encombrent pas le tableau.
+  // Kanban : les projets archivés n'encombrent pas le tableau. Pour un
+  // alternant, le tableau ne montre que ses propres tâches et les tâches non
+  // assignées (partagées) ; les tâches assignées à d'autres restent visibles
+  // uniquement dans l'onglet Tâches. L'admin voit tout.
   const idsActifs = new Set(projetsActifs.map(p => p.id));
   const tachesKanban = taches.filter(t => parProjet(t) && idsActifs.has(t.projet_id) &&
-    (!filtreMembre || t.assigne_id === filtreMembre));
+    (!filtreMembre || t.assigne_id === filtreMembre) &&
+    (isAdmin || !t.assigne_id || t.assigne_id === req.profile.id));
 
   // Gantt : une ligne par alternant, avec les projets actifs dont il est
   // membre dans la fenêtre + ses semaines d'école et ses congés.
@@ -152,8 +156,10 @@ router.post('/projets/:id', async (req, res) => {
   res.redirect(retourOu(req, '/projets'));
 });
 
-router.post('/projets/:id/archiver', requireAdmin, async (req, res) => {
-  const { data: projet } = await req.db.from('projets').select('statut').eq('id', req.params.id).single();
+// Archivage/réactivation ouvert aux membres du projet (la RLS refuse les
+// non-membres) ; seule la suppression définitive reste réservée à l'admin.
+router.post('/projets/:id/archiver', async (req, res) => {
+  const { data: projet } = await req.db.from('projets').select('statut').eq('id', req.params.id).maybeSingle();
   if (projet) {
     await req.db.from('projets')
       .update({ statut: projet.statut === 'actif' ? 'archive' : 'actif' })

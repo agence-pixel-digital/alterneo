@@ -54,18 +54,19 @@
       </div>
       <button class="btn btn-primary" type="submit" style="width:100%;" id="modal-projet-submit">Créer le projet</button>
     </form>
-    <% if (isAdmin) { %>
     <div id="modal-projet-actions" style="display:none;margin-top:10px;">
       <form method="POST" id="form-archiver-projet" action="">
         <input type="hidden" name="retour" value="<%= retourCourant %>">
         <button class="btn btn-outline" type="submit" style="width:100%;" id="btn-archiver-projet">Archiver ce projet</button>
       </form>
+      <% if (isAdmin) { %>
       <form method="POST" id="form-supprimer-projet" action="" style="margin-top:10px;"
         onsubmit="return confirm('Supprimer définitivement ce projet et toutes ses tâches ?');">
+        <input type="hidden" name="retour" value="<%= retourCourant %>">
         <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer ce projet</button>
       </form>
+      <% } %>
     </div>
-    <% } %>
   </div>
 </div>
 
@@ -150,7 +151,8 @@
     if (actions) {
       document.getElementById('form-archiver-projet').action = '/projets/' + d.id + '/archiver';
       document.getElementById('btn-archiver-projet').textContent = d.statut === 'archive' ? 'Réactiver ce projet' : 'Archiver ce projet';
-      document.getElementById('form-supprimer-projet').action = '/projets/' + d.id + '/supprimer';
+      var supprP = document.getElementById('form-supprimer-projet'); // admin uniquement
+      if (supprP) supprP.action = '/projets/' + d.id + '/supprimer';
       actions.style.display = 'block';
     }
     modal.querySelector('input[name="nom"]').value = d.nom;
@@ -161,7 +163,7 @@
     modal.style.display = 'flex';
   };
 
-  window.ouvrirModalTache = function () {
+  window.ouvrirModalTache = function (projetId) {
     var modal = document.getElementById('modal-tache');
     document.getElementById('modal-tache-titre').textContent = 'Nouvelle tâche';
     document.getElementById('modal-tache-submit').textContent = 'Créer la tâche';
@@ -170,6 +172,15 @@
     if (suppr) suppr.style.display = 'none';
     modal.querySelector('input[name="titre"]').value = '';
     modal.querySelector('textarea[name="description"]').value = '';
+    // Si on ouvre la modale depuis un projet précis (vue filtrée), ce projet
+    // est déjà sélectionné ; sinon on retombe sur le premier projet de la liste.
+    if (projetId) {
+      setSelect('tache-projet', projetId);
+    } else {
+      var premier = document.querySelector('#tache-projet');
+      var opt = premier && premier.closest('.select-field').querySelector('.select-option');
+      if (opt) setSelect('tache-projet', opt.dataset.value);
+    }
     setSelect('tache-assigne', '', 'Non assignée');
     setSelect('tache-statut', 'a_faire');
     modal.style.display = 'flex';
