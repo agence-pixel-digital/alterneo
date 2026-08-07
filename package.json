@@ -17,5 +17,8 @@
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "xlsx": "^0.18.5"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.9"
   }
 }
