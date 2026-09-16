@@ -1,0 +1,35 @@
+<%- include('partials/header', { title: 'Envoi comptable', active: 'envoi-comptable' }) %>
+
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<% if (envoye) { %><div class="success" style="background:#E2F3EB;color:#15784f;padding:12px 16px;border-radius:10px;font-size:13.5px;font-weight:600;margin-bottom:18px;">E-mail envoyé avec succès.</div><% } %>
+
+<div class="card">
+  <h3>Générer le récapitulatif mensuel</h3>
+  <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 18px;">
+    Pour chaque société, un e-mail récapitulatif est préparé pour tous ses alternants (jours entreprise/école, congés payés pris, absences école). Vous pourrez le relire et le modifier avant envoi.
+  </p>
+  <form method="POST" action="/envoi-comptable/generer">
+    <div class="grid-2">
+      <div>
+        <label>Mois</label>
+        <%- include('partials/month-input', { name: 'mois', value: mois }) %>
+      </div>
+      <div>
+        <label>Société</label>
+        <%- include('partials/select-field', {
+          name: 'societe_id', value: societeId, placeholder: 'Toutes les sociétés',
+          options: [{ value: '', label: 'Toutes les sociétés' }].concat(societes.map(s => ({ value: s.id, label: s.nom })))
+        }) %>
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit" style="width:100%;">Générer les e-mails</button>
+  </form>
+</div>
+
+<% if (societes.length === 0) { %>
+  <div class="card">
+    <div class="empty-state">Aucune société n'a encore été créée. Rendez-vous dans <a href="/parametres">Paramètres</a> pour en ajouter une et renseigner son e-mail comptable.</div>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

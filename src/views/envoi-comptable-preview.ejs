@@ -1,0 +1,32 @@
+<%- include('partials/header', { title: 'Envoi comptable — ' + formatPeriode(mois), active: 'envoi-comptable' }) %>
+
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+
+<p style="font-size:12.5px;color:#9AA7B5;margin:0 0 18px;">
+  Relisez et modifiez chaque e-mail si besoin avant de l'envoyer. Rien n'est envoyé tant que vous ne cliquez pas sur « Envoyer ».
+</p>
+
+<% emails.forEach(function(e, i) { %>
+  <div class="card">
+    <h3><%= e.societeNom %></h3>
+    <% if (!e.to) { %>
+      <div class="error" style="margin-bottom:14px;">Aucun e-mail comptable renseigné pour cette société — ajoutez-en un dans <a href="/parametres">Paramètres</a>, ou saisissez-le ci-dessous avant l'envoi.</div>
+    <% } %>
+    <form method="POST" action="/envoi-comptable/envoyer" onsubmit="document.getElementById('html-<%= i %>').value = document.getElementById('body-<%= i %>').innerHTML;">
+      <label>Destinataire</label>
+      <input type="email" name="to" value="<%= e.to %>" required>
+      <label>Sujet</label>
+      <input type="text" name="subject" value="<%= e.subject %>" required>
+      <label>Corps de l'e-mail</label>
+      <div id="body-<%= i %>" contenteditable="true"
+        style="border:1px solid #E8ECF2;border-radius:10px;padding:16px;min-height:120px;font-size:13.5px;line-height:1.5;background:#fff;"
+      ><%- e.html %></div>
+      <input type="hidden" name="html" id="html-<%= i %>">
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:14px;">Envoyer à <%= e.to || 'ce destinataire' %></button>
+    </form>
+  </div>
+<% }); %>
+
+<a href="/envoi-comptable" class="btn btn-outline">Retour</a>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,74 @@
+<%- include('partials/header', { title: 'Paramètres', active: 'parametres' }) %>
+
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+    <h3 style="margin:0;">Sociétés</h3>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-ajouter-societe').style.display='flex'">+ Ajouter</button>
+  </div>
+  <p style="font-size:12.5px;color:#9AA7B5;margin:0 0 18px;">Chaque alternant peut être rattaché à une société. L'e-mail comptable reçoit le récapitulatif mensuel. Cliquez sur une société pour la modifier.</p>
+  <% if (societes.length === 0) { %>
+    <div class="empty-state">Aucune société pour l'instant.</div>
+  <% } else { %>
+    <div class="alternant-grid">
+      <% societes.forEach(function(s) { %>
+        <button type="button" class="alternant-tile" style="border:1.5px solid #E8ECF2;background:none;cursor:pointer;font-family:inherit;"
+          data-id="<%= s.id %>" data-nom="<%= s.nom %>" data-email="<%= s.email_comptable || '' %>"
+          onclick="ouvrirModalSociete(this)">
+          <div class="avatar" style="background:#2E5C8A;"><%= s.nom[0].toUpperCase() %></div>
+          <div class="name"><%= s.nom %></div>
+          <div class="role"><%= s.email_comptable || 'Aucun e-mail comptable' %></div>
+        </button>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
+<div id="modal-ajouter-societe" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Ajouter une société</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ajouter-societe').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/parametres/societes">
+      <label>Nom de la société</label>
+      <input name="nom" required>
+      <label>E-mail comptable</label>
+      <input type="email" name="email_comptable" placeholder="comptable@societe.fr">
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:10px;">Ajouter</button>
+    </form>
+  </div>
+</div>
+
+<div id="modal-societe" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Modifier la société</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-societe').style.display='none'">✕</button>
+    </div>
+    <form id="form-societe" method="POST">
+      <label>Nom de la société</label>
+      <input name="nom" id="societe-nom" required>
+      <label>E-mail comptable</label>
+      <input type="email" name="email_comptable" id="societe-email" placeholder="comptable@societe.fr">
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:10px;">Enregistrer</button>
+    </form>
+    <form id="form-societe-supprimer" method="POST" style="margin-top:10px;"
+      onsubmit="return confirm('Supprimer cette société ? Les alternants rattachés ne seront plus associés à aucune société.');">
+      <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer</button>
+    </form>
+  </div>
+</div>
+<script>
+  function ouvrirModalSociete(btn) {
+    const { id, nom, email } = btn.dataset;
+    document.getElementById('form-societe').action = '/parametres/societes/' + id;
+    document.getElementById('form-societe-supprimer').action = '/parametres/societes/' + id + '/supprimer';
+    document.getElementById('societe-nom').value = nom;
+    document.getElementById('societe-email').value = email;
+    document.getElementById('modal-societe').style.display = 'flex';
+  }
+</script>
+
+<%- include('partials/footer') %>

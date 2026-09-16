@@ -1,0 +1,27 @@
+<%
+  // Sans valeur explicite ni placeholder, le premier choix est affiché comme
+  // sélectionné : le champ caché doit alors vraiment porter cette valeur,
+  // sinon le formulaire soumet un champ vide malgré l'apparence sélectionnée.
+  let selVal;
+  if (locals.value != null && locals.value !== '') {
+    selVal = String(locals.value);
+  } else if (locals.placeholder) {
+    selVal = '';
+  } else {
+    selVal = options[0] ? String(options[0].value) : '';
+  }
+  const selected = options.find(o => String(o.value) === selVal);
+  const selectedLabel = selected ? selected.label : (locals.placeholder || '');
+%>
+<div class="select-field">
+  <button type="button" class="select-display">
+    <span class="select-label"><%= selectedLabel %></span>
+    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+  </button>
+  <input type="hidden" name="<%= name %>" id="<%= locals.id || name %>" class="select-value" value="<%= selVal %>">
+  <div class="select-popup">
+    <% options.forEach(function(o) { %>
+      <div class="select-option <%= String(o.value) === selVal ? 'selected' : '' %>" data-value="<%= o.value %>" data-label="<%= o.label %>"><%= o.label %></div>
+    <% }); %>
+  </div>
+</div>

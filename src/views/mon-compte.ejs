@@ -1,0 +1,31 @@
+<%- include('partials/header', { title: 'Mon compte', active: 'mon-compte' }) %>
+
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<% if (success) { %><div class="badge badge-validee" style="display:block;padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;"><%= success %></div><% } %>
+
+<div class="card">
+  <div class="row-flex" style="margin-bottom:22px;">
+    <div class="avatar" style="width:54px;height:54px;border-radius:13px;background:<%= profile.avatar_color %>;font-size:18px;">
+      <%= (profile.prenom[0] + profile.nom[0]).toUpperCase() %>
+    </div>
+    <div>
+      <div style="font-size:18px;font-weight:800;"><%= profile.prenom %> <%= profile.nom %></div>
+      <div style="font-size:13px;color:#7A8699;"><%= profile.email %></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Changer mon mot de passe</h3>
+  <form method="POST" action="/mon-compte/mot-de-passe">
+    <label>Mot de passe actuel</label>
+    <input type="password" name="mot_de_passe_actuel" required>
+    <label>Nouveau mot de passe</label>
+    <input type="password" name="nouveau_mot_de_passe" required minlength="8">
+    <label>Confirmer le nouveau mot de passe</label>
+    <input type="password" name="confirmation" required minlength="8">
+    <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;">Mettre à jour le mot de passe</button>
+  </form>
+</div>
+
+<%- include('partials/footer') %>
