@@ -18,6 +18,7 @@ input, select, textarea, button { font-family: inherit; }
 .nav a { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:10px; font-size:14px; font-weight:500; color:#5B6B7D; margin-bottom:4px; }
 .nav a.active { background:#EAF1F8; color:#2E5C8A; font-weight:600; }
 .nav a:hover { background:#F1F5FA; }
+.nav-badge { margin-left:auto; background:#C2502E; color:#fff; font-size:11px; font-weight:700; min-width:19px; height:19px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; padding:0 6px; }
 .topbar-user-btn { border:0; background:none; padding:4px; border-radius:12px; cursor:pointer; }
 .topbar-user-btn:hover { background:#F6F8FB; }
 .topbar-dropdown { display:none; position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid #E8ECF2; border-radius:12px; box-shadow:0 12px 30px rgba(20,40,70,.16); padding:6px; min-width:190px; z-index:60; }

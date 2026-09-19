@@ -19,6 +19,19 @@ async function requireAuth(req, res, next) {
   }
   req.profile = profile;
   res.locals.profile = profile; // disponible directement dans les vues EJS
+
+  // Compteur de tickets ouverts pour la pastille de navigation. La RLS filtre
+  // selon le rôle : l'admin voit tous les tickets ouverts, l'alternant seulement
+  // ceux qui lui sont assignés. Sans incidence sur le parcours en cas d'erreur.
+  try {
+    const { count } = await req.db
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('statut', 'ouvert');
+    res.locals.ticketsOuverts = count || 0;
+  } catch (e) {
+    res.locals.ticketsOuverts = 0;
+  }
   next();
 }
 

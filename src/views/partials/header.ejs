@@ -33,7 +33,7 @@
       <% if (profile.role === 'admin') { %>
         <a href="/alternants" class="<%= active === 'alternants' ? 'active' : '' %>"><%- icons.users %>Alternants &amp; planning</a>
         <a href="/projets" class="<%= active === 'projets' ? 'active' : '' %>"><%- icons.kanban %>Projets</a>
-        <a href="/tickets" class="<%= active === 'tickets' ? 'active' : '' %>"><%- icons.ticket %>Tickets</a>
+        <a href="/tickets" class="<%= active === 'tickets' ? 'active' : '' %>"><%- icons.ticket %>Tickets<% if (locals.ticketsOuverts) { %><span class="nav-badge"><%= ticketsOuverts %></span><% } %></a>
         <a href="/conges" class="<%= active === 'conges' ? 'active' : '' %>"><%- icons.sun %>Congés</a>
         <a href="/ecole" class="<%= active === 'ecole' ? 'active' : '' %>"><%- icons.school %>Absences école</a>
         <a href="/heures" class="<%= active === 'heures' ? 'active' : '' %>"><%- icons.clock %>Heures supp.</a>
@@ -42,7 +42,7 @@
       <% } else { %>
         <a href="/planning" class="<%= active === 'planning' ? 'active' : '' %>"><%- icons.cal %>Planning</a>
         <a href="/projets" class="<%= active === 'projets' ? 'active' : '' %>"><%- icons.kanban %>Projets</a>
-        <a href="/tickets" class="<%= active === 'tickets' ? 'active' : '' %>"><%- icons.ticket %>Tickets</a>
+        <a href="/tickets" class="<%= active === 'tickets' ? 'active' : '' %>"><%- icons.ticket %>Tickets<% if (locals.ticketsOuverts) { %><span class="nav-badge"><%= ticketsOuverts %></span><% } %></a>
         <a href="/ecole" class="<%= active === 'ecole' ? 'active' : '' %>"><%- icons.school %>Absences école</a>
         <a href="/conges" class="<%= active === 'conges' ? 'active' : '' %>"><%- icons.sun %>Congés</a>
         <% if (profile.heures_eligible) { %>
