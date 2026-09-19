@@ -31,9 +31,6 @@ app.use(session({
 // Routes publiques (connexion)
 app.use('/', require('./src/routes/auth'));
 
-// Tâches planifiées externes (cron), protégées par CRON_SECRET — hors session.
-app.use('/', require('./src/routes/cron'));
-
 // Redirection racine
 app.get('/', (req, res) => res.redirect('/dashboard'));
 
@@ -54,4 +51,6 @@ app.use('/', require('./src/routes/compte'));
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`Alternéo lancé sur http://localhost:${process.env.PORT || 3000}`);
+  // Planificateur intégré : rappel mensuel des absences école (le 23).
+  require('./src/lib/planificateur').planifierRappels();
 });
