@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { requireAdmin } = require('../middleware');
 const { supabaseAdmin, supabaseAnon } = require('../supabaseClient');
 const { calculerAcquis } = require('../lib/conges');
-const { buildMonthGrid } = require('../lib/planningGrid');
+const { buildMonthGrid, buildGlobalMonthGrid } = require('../lib/planningGrid');
 const { parseExcelPlanning } = require('../lib/planningExcel');
 const { iso } = require('../lib/dates');
 
@@ -53,7 +53,21 @@ router.get('/alternants', requireAdmin, async (req, res) => {
   let selected = null;
   if (req.query.voir) selected = await chargerFiche(req.db, req.query.voir, req.query.mois);
 
-  res.render('alternants', { alternants: alternants || [], societes: societes || [], selected, error: req.query.error || null, showModal: false });
+  // Bloc planning global du mois (fusion Alternants + Planning sur une seule page).
+  const moisParam = req.query.mois || iso(new Date()).slice(0, 7);
+  const [gy, gm] = moisParam.split('-').map(Number);
+  const gStart = `${gy}-${String(gm).padStart(2, '0')}-01`;
+  const gEnd = `${gy}-${String(gm).padStart(2, '0')}-${String(new Date(gy, gm, 0).getDate()).padStart(2, '0')}`;
+  const { data: planningRows } = await req.db.from('planning')
+    .select('alternant_id,date,type,modalite').gte('date', gStart).lte('date', gEnd);
+  const planningGlobal = buildGlobalMonthGrid(alternants || [], planningRows || [], moisParam);
+  const moisBase = '/alternants?' + (req.query.voir ? 'voir=' + encodeURIComponent(req.query.voir) + '&' : '');
+
+  res.render('alternants', {
+    alternants: alternants || [], societes: societes || [], selected,
+    planningGlobal, moisBase,
+    error: req.query.error || null, showModal: false
+  });
 });
 
 router.post('/alternants', requireAdmin, uploadPlanning.single('fichier_planning'), async (req, res) => {

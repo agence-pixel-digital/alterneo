@@ -49,4 +49,45 @@ async function notifierReponseConge(alternant, conge) {
   });
 }
 
-module.exports = { notifierNouvelleCongeDemande, notifierNouvelleAbsenceEcole, notifierNouvelleFichePaie, notifierReponseConge };
+// Un ticket vient d'être assigné : on prévient les alternants concernés.
+async function notifierNouveauTicket(ticket, emailsAssignes) {
+  await envoyerMail({
+    to: emailsAssignes,
+    subject: `Nouveau ticket assigné — ${ticket.titre}`,
+    html: `<p>Un nouveau ticket vous a été assigné : <strong>${ticket.titre}</strong> (priorité ${ticket.priorite}).</p>
+           <p>Retrouvez-le dans votre espace Alternéo, onglet « Tickets ».</p>`
+  });
+}
+
+// Rappel mensuel (le 23) : chaque alternant reçoit un e-mail l'invitant à
+// compléter ses éventuelles absences à l'école. Envoi individuel (pas de
+// destinataires en clair les uns pour les autres). Renvoie le nombre d'envois.
+async function envoyerRappelsAbsencesEcole() {
+  const { data: alternants } = await supabaseAdmin.from('profiles').select('prenom, email').eq('role', 'alternant');
+  const base = process.env.BASE_URL || 'https://alterneo.pixel-digital.fr';
+  let envoyes = 0;
+  for (const a of (alternants || [])) {
+    if (!a.email) continue;
+    await envoyerMail({
+      to: a.email,
+      subject: 'Pensez à compléter vos absences école',
+      html: `<p>Bonjour ${a.prenom},</p>
+             <p>Merci de vérifier et de compléter vos éventuelles absences à l'école ce mois-ci dans votre espace Alternéo.</p>
+             <p><a href="${base}/ecole">Compléter mes absences école</a></p>`
+    });
+    envoyes++;
+  }
+  return envoyes;
+}
+
+// Un ticket a été marqué terminé par un alternant : on prévient les admins.
+async function notifierTicketTermine(ticket, terminePar) {
+  const to = await emailsAdmins();
+  await envoyerMail({
+    to,
+    subject: `Ticket terminé — ${ticket.titre}`,
+    html: `<p>${terminePar.prenom} ${terminePar.nom} a marqué le ticket <strong>${ticket.titre}</strong> comme terminé.</p>`
+  });
+}
+
+module.exports = { notifierNouvelleCongeDemande, notifierNouvelleAbsenceEcole, notifierNouvelleFichePaie, notifierReponseConge, notifierNouveauTicket, notifierTicketTermine, envoyerRappelsAbsencesEcole };

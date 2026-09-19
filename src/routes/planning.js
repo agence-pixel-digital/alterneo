@@ -19,19 +19,17 @@ const upload = multer({
 });
 
 router.get('/planning', async (req, res) => {
+  // Côté admin, le planning global est désormais fusionné dans la page
+  // « Alternants & planning » : on y redirige (en conservant le mois éventuel).
+  if (req.profile.role === 'admin') {
+    return res.redirect('/alternants' + (req.query.mois ? '?mois=' + encodeURIComponent(req.query.mois) : ''));
+  }
+
   const moisParam = req.query.mois || iso(new Date()).slice(0, 7);
   const [y, m] = moisParam.split('-').map(Number);
   const monthStart = `${y}-${String(m).padStart(2, '0')}-01`;
   const lastDay = new Date(y, m, 0).getDate();
   const monthEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-  if (req.profile.role === 'admin') {
-    const [{ data: alternants }, { data: rows }] = await Promise.all([
-      req.db.from('profiles').select('*').eq('role', 'alternant').order('nom'),
-      req.db.from('planning').select('alternant_id,date,type,modalite').gte('date', monthStart).lte('date', monthEnd)
-    ]);
-    return res.render('planning-admin', buildGlobalMonthGrid(alternants || [], rows || [], moisParam));
-  }
 
   const profile = req.profile;
   const { data: rows } = await req.db.from('planning').select('date,type,commentaire,modalite').eq('alternant_id', profile.id).gte('date', monthStart).lte('date', monthEnd);

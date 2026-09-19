@@ -26,7 +26,7 @@
     <div class="empty-state">Aucun projet sur cette période.</div>
   <% } else { %>
   <% const nbMois = gantt.markers.length; %>
-  <div class="table-scroll gantt-scroll" id="gantt-scroll">
+  <div class="table-scroll gantt-scroll" id="gantt-scroll" data-total-days="<%= gantt.totalDays %>">
   <div style="position:relative;min-width:720px;<%= nbMois > 2 ? 'width:' + (nbMois * 50) + '%;' : '' %>">
     <% if (gantt.aujourdHui) { %>
       <div class="gantt-aujourdhui" style="left:calc(202px + (100% - 202px) * <%= gantt.aujourdHui.frac %>);"></div>
@@ -86,6 +86,8 @@
               <div class="gantt-bar gantt-bar-editable">
                 <span class="gantt-bar-label"><%= p.nom %></span>
               </div>
+              <span class="gantt-handle gantt-handle-l"></span>
+              <span class="gantt-handle gantt-handle-r"></span>
               <div class="gantt-tooltip" style="white-space:normal;min-width:200px;text-align:left;">
                 <%= p.nom %><br>
                 <span style="opacity:.75;font-weight:500;"><%= formatDate(p.date_debut) %> → <%= formatDate(p.date_fin) %></span>
@@ -157,5 +159,103 @@
     scroller.addEventListener('click', function (e) {
       if (aBouge) { e.stopPropagation(); e.preventDefault(); aBouge = false; }
     }, true);
+  })();
+
+  // Glisser une barre de projet dans le Gantt : par le corps de la barre pour la
+  // DÉPLACER (début+fin décalés, durée conservée) ; par les poignées gauche/
+  // droite pour la RALLONGER/RACCOURCIR (une seule date bouge, min. 1 jour).
+  // Autorisé à l'admin et aux membres (la RLS tranche côté serveur). Un vrai
+  // glissement neutralise le clic qui suivrait (sinon la modale s'ouvrirait).
+  (function () {
+    var scroller = document.getElementById('gantt-scroll');
+    if (!scroller) return;
+    var totalDays = parseInt(scroller.dataset.totalDays, 10) || 0;
+    if (!totalDays) return;
+    var pasPct = 100 / totalDays;
+
+    function parseIso(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+    function toIso(d) {
+      var m = String(d.getMonth() + 1).padStart(2, '0'), j = String(d.getDate()).padStart(2, '0');
+      return d.getFullYear() + '-' + m + '-' + j;
+    }
+    function shift(iso, days) { var d = parseIso(iso); d.setDate(d.getDate() + days); return toIso(d); }
+
+    var drag = null, aBouge = false;
+
+    function demarrer(mode, item, e) {
+      var track = item.parentElement;
+      e.stopPropagation(); e.preventDefault();   // pas de pan du Gantt
+      drag = {
+        mode: mode, item: item,
+        pxParJour: track.clientWidth / totalDays,
+        departX: e.pageX,
+        left0: parseFloat(item.style.left) || 0,
+        width0: parseFloat(item.style.width) || 0,
+        debut: item.dataset.dateDebut, fin: item.dataset.dateFin,
+        delta: 0
+      };
+      aBouge = false;
+      document.body.style.userSelect = 'none';
+    }
+
+    document.querySelectorAll('.gantt-item[data-id]').forEach(function (item) {
+      var bar = item.querySelector('.gantt-bar-editable');
+      if (bar) bar.addEventListener('mousedown', function (e) { if (e.button === 0) demarrer('move', item, e); });
+      var hl = item.querySelector('.gantt-handle-l');
+      if (hl) hl.addEventListener('mousedown', function (e) { if (e.button === 0) demarrer('resize-l', item, e); });
+      var hr = item.querySelector('.gantt-handle-r');
+      if (hr) hr.addEventListener('mousedown', function (e) { if (e.button === 0) demarrer('resize-r', item, e); });
+    });
+
+    window.addEventListener('mousemove', function (e) {
+      if (!drag) return;
+      var delta = Math.round((e.pageX - drag.departX) / drag.pxParJour);
+      var joursLarg = Math.round(drag.width0 / pasPct);   // durée actuelle en jours
+      if (drag.mode === 'resize-l') delta = Math.min(delta, joursLarg - 1);   // garder >= 1 jour
+      if (drag.mode === 'resize-r') delta = Math.max(delta, -(joursLarg - 1));
+      if (delta === drag.delta) return;
+      drag.delta = delta;
+      if (delta !== 0) aBouge = true;
+      if (drag.mode === 'move') {
+        drag.item.style.left = Math.max(0, Math.min(drag.left0 + delta * pasPct, 100 - drag.width0)) + '%';
+      } else if (drag.mode === 'resize-l') {
+        drag.item.style.left = Math.max(0, drag.left0 + delta * pasPct) + '%';
+        drag.item.style.width = Math.max(pasPct, drag.width0 - delta * pasPct) + '%';
+      } else { // resize-r
+        drag.item.style.width = Math.max(pasPct, Math.min(drag.width0 + delta * pasPct, 100 - drag.left0)) + '%';
+      }
+    });
+
+    window.addEventListener('mouseup', function () {
+      if (!drag) return;
+      var d = drag; drag = null;
+      document.body.style.userSelect = '';
+      if (d.delta === 0) return;
+      var nd = d.debut, nf = d.fin;
+      if (d.mode === 'move') { nd = shift(d.debut, d.delta); nf = shift(d.fin, d.delta); }
+      else if (d.mode === 'resize-l') { nd = shift(d.debut, d.delta); }
+      else { nf = shift(d.fin, d.delta); }
+      fetch('/projets/' + d.item.dataset.id + '/dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' },
+        body: 'date_debut=' + encodeURIComponent(nd) + '&date_fin=' + encodeURIComponent(nf)
+      }).then(function (r) {
+        if (r.ok) { d.item.dataset.dateDebut = nd; d.item.dataset.dateFin = nf; }
+        else {
+          d.item.style.left = d.left0 + '%'; d.item.style.width = d.width0 + '%';
+          alert(r.status === 403 ? "Vous n'avez pas le droit de modifier ce projet." : 'La modification a échoué, réessayez.');
+        }
+      }).catch(function () {
+        d.item.style.left = d.left0 + '%'; d.item.style.width = d.width0 + '%';
+        alert('La modification a échoué (réseau).');
+      });
+    });
+
+    // Neutralise le clic (ouverture de modale) juste après un vrai glissement.
+    document.querySelectorAll('.gantt-item[data-id]').forEach(function (item) {
+      item.addEventListener('click', function (e) {
+        if (aBouge) { e.stopPropagation(); e.preventDefault(); aBouge = false; }
+      }, true);
+    });
   })();
 </script>

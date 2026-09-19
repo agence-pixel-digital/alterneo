@@ -1,0 +1,59 @@
+<%- include('partials/header', { title: 'Tickets', active: 'tickets' }) %>
+
+<% const pjIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" style="vertical-align:-2px;"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7.5-7.5"></path></svg>'; %>
+
+<div class="card">
+  <h3 style="margin:0 0 14px;">Mes tickets (<%= ouverts.length %>)</h3>
+  <% if (ouverts.length === 0) { %>
+    <div class="empty-state">Aucun ticket en cours. 🎉</div>
+  <% } %>
+  <% ouverts.forEach(function(t) { %>
+    <div class="ticket-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:14.5px;font-weight:800;">
+            <%= t.titre %>
+            <span class="badge <%= PRIORITE_BADGE[t.priorite] %>" style="margin-left:8px;"><%= PRIORITE_LABEL[t.priorite] %></span>
+          </div>
+          <% if (t.description) { %><div class="ticket-desc" style="margin-top:8px;"><%- t.description %></div><% } %>
+          <% if (t.pieces.length) { %>
+            <div class="ticket-pj">
+              <% t.pieces.forEach(function(p) { %>
+                <a class="pj-chip" href="/tickets/<%= t.id %>/pieces/<%= p.id %>/telecharger"><%- pjIcon %><%= p.nom %></a>
+              <% }); %>
+            </div>
+          <% } %>
+          <% if (t.assignes.length > 1) { %>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:6px;">
+              <span class="muted" style="font-size:12px;">Aussi assigné à</span>
+              <div class="avatar-stack">
+                <% t.assignes.filter(m => m.id !== moi).forEach(function(m) { %>
+                  <div class="avatar" style="width:24px;height:24px;font-size:9.5px;background:<%= m.avatar_color %>;" title="<%= m.prenom %> <%= m.nom %>"><%= (m.prenom[0]+m.nom[0]).toUpperCase() %></div>
+                <% }); %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+        <form method="POST" action="/tickets/<%= t.id %>/terminer" style="margin:0;flex-shrink:0;"
+          onsubmit="return confirm('Marquer ce ticket comme terminé ?');">
+          <button type="submit" class="btn btn-primary">Marquer terminé</button>
+        </form>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<% if (termines.length) { %>
+<div class="card">
+  <h3 style="margin:0 0 14px;">Mes tickets terminés (<%= termines.length %>)</h3>
+  <% termines.forEach(function(t) { %>
+    <div class="list-row" style="align-items:center;gap:14px;">
+      <div style="flex:1;font-size:13.5px;font-weight:700;color:#5B6B7D;text-decoration:line-through;"><%= t.titre %></div>
+      <div style="flex:.5;text-align:right;"><span class="badge <%= PRIORITE_BADGE[t.priorite] %>"><%= PRIORITE_LABEL[t.priorite] %></span></div>
+      <div style="flex:.5;text-align:right;font-size:12px;color:#9AA7B5;"><% if (t.termine_at) { %><%= formatDate(t.termine_at.slice(0,10)) %><% } %></div>
+    </div>
+  <% }); %>
+</div>
+<% } %>
+
+<%- include('partials/footer') %>

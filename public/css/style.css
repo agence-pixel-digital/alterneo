@@ -115,7 +115,12 @@ td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 
 .gantt-item { display:block; }
 .gantt-bar { height:100%; background:#2E5C8A; border-radius:6px; display:flex; align-items:center; padding:0 8px; overflow:hidden; }
-.gantt-bar-editable { cursor:pointer; }
+.gantt-bar-editable { cursor:grab; }
+.gantt-bar-editable:active { cursor:grabbing; }
+.gantt-handle { position:absolute; top:0; width:9px; height:100%; cursor:ew-resize; z-index:3; border-radius:6px; }
+.gantt-handle-l { left:-2px; }
+.gantt-handle-r { right:-2px; }
+.gantt-item:hover .gantt-handle { background:rgba(46,92,138,0.45); }
 .gantt-bar-ecole { background:#EFE9F9; border:1.5px dashed #B9A3E3; }
 .gantt-bar-ecole .gantt-bar-label { color:#553A8C; }
 .gantt-bar-conge { background:#E2F3EB; border:1.5px dashed #8FD0B0; }
@@ -274,6 +279,30 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
 .membres-list { display:flex; flex-direction:column; gap:8px; max-height:190px; overflow-y:auto; border:1.5px solid #E2E7EE; border-radius:10px; padding:10px 12px; margin-bottom:12px; }
 .membre-check { display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:600; cursor:pointer; margin:0; }
 .membre-check input { width:auto; margin:0; }
+
+/* Tickets */
+.badge-prio-basse { background:#EEF1F5; color:#5B6B7D; }
+.badge-prio-normale { background:#FBF3E2; color:#B7791F; }
+.badge-prio-haute { background:#F8E8E2; color:#9A3D22; }
+.ticket-desc { font-size:12.5px; color:#5B6B7D; margin-top:4px; line-height:1.55; }
+.ticket-desc p { margin:4px 0; }
+.ticket-desc ul, .ticket-desc ol { margin:4px 0 4px 20px; }
+.ticket-row .ticket-desc { max-height:66px; overflow:hidden; }
+.ticket-pj { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.pj-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; background:#EEF2F7; border-radius:8px; font-size:12px; color:#244B70; font-weight:600; text-decoration:none; }
+.pj-chip:hover { background:#E1E8F1; }
+.ticket-card { border:1px solid #EDF0F4; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+
+/* Éditeur rich-text maison */
+.rte { border:1.5px solid #E2E7EE; border-radius:10px; overflow:hidden; margin-bottom:12px; }
+.rte-toolbar { display:flex; align-items:center; gap:4px; padding:6px 8px; background:#F6F8FB; border-bottom:1px solid #E2E7EE; }
+.rte-toolbar button { min-width:30px; height:28px; padding:0 8px; border:1px solid #DCE2EA; background:#fff; border-radius:7px; font-size:13px; line-height:1; cursor:pointer; color:#3B4657; }
+.rte-toolbar button:hover { background:#EEF2F7; }
+.rte-sep { width:1px; height:18px; background:#DCE2EA; margin:0 4px; }
+.rte-editor { min-height:120px; max-height:260px; overflow-y:auto; padding:10px 12px; font-size:13.5px; line-height:1.6; outline:none; }
+.rte-editor:empty:before { content:'Décrivez le ticket…'; color:#9AA7B5; }
+.rte-editor ul, .rte-editor ol { margin:6px 0 6px 22px; }
+.rte-editor p { margin:5px 0; }
 
 .kanban { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; align-items:start; }
 .kanban-col { background:#F6F8FB; border-radius:12px; padding:12px; min-height:220px; }

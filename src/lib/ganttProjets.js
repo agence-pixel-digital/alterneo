@@ -155,7 +155,8 @@ function buildGanttProjets(projets, options = {}) {
     ? { frac: (jours(min, todayIso) + 0.5) / totalDays }
     : null;
 
-  return { lignes, markers, semaines, semaineActuelle, weekends, aujourdHui };
+  // totalDays / debut / fin exposés pour le glisser-déposer (conversion px → jours côté client).
+  return { lignes, markers, semaines, semaineActuelle, weekends, aujourdHui, totalDays, debut: min, fin: max };
 }
 
 // Fenêtre d'affichage du Gantt : le mois demandé seul, ou par défaut 6 mois

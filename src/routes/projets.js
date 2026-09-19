@@ -166,6 +166,22 @@ router.post('/projets/:id', async (req, res) => {
   res.redirect(retourOu(req, '/projets'));
 });
 
+// Déplacement d'un projet dans le temps depuis le Gantt (glisser gauche/droite).
+// Endpoint léger dédié : ne touche QUE les dates (surtout pas les membres, que
+// POST /projets/:id réécrirait). La RLS (is_admin() OR est_membre_projet) gère
+// l'autorisation → 200 pour l'admin et les membres, 403 pour un non-membre.
+router.post('/projets/:id/dates', async (req, res) => {
+  const { date_debut, date_fin } = req.body;
+  const ISO = /^\d{4}-\d{2}-\d{2}$/;
+  if (!ISO.test(date_debut || '') || !ISO.test(date_fin || '') || date_fin < date_debut) {
+    return res.status(400).json({ ok: false });
+  }
+  const { data } = await req.db.from('projets')
+    .update({ date_debut, date_fin }).eq('id', req.params.id).select('id');
+  const ok = !!(data && data.length);
+  res.status(ok ? 200 : 403).json({ ok });
+});
+
 // Le statut d'un projet (Actif / En attente / Terminé) est modifié via le
 // sélecteur de la fenêtre d'édition (route POST /projets/:id) ; seule la
 // suppression définitive reste réservée à l'admin.

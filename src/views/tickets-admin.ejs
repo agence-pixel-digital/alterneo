@@ -1,0 +1,211 @@
+<%- include('partials/header', { title: 'Tickets', active: 'tickets' }) %>
+
+<% const pjIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" style="vertical-align:-2px;"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7.5-7.5"></path></svg>'; %>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+    <h3 style="margin:0;">Tickets ouverts (<%= ouverts.length %>)</h3>
+    <button type="button" class="btn btn-primary" onclick="ouvrirModalTicket()">+ Nouveau ticket</button>
+  </div>
+
+  <% if (ouverts.length === 0) { %>
+    <div class="empty-state">Aucun ticket ouvert.</div>
+  <% } %>
+
+  <% ouverts.forEach(function(t) { %>
+    <div class="ticket-row list-row" style="align-items:flex-start;gap:14px;">
+      <div style="flex:1.8;min-width:180px;">
+        <div style="font-size:13.5px;font-weight:700;">
+          <%= t.titre %>
+          <span class="badge <%= PRIORITE_BADGE[t.priorite] %>" style="margin-left:8px;"><%= PRIORITE_LABEL[t.priorite] %></span>
+        </div>
+        <% if (t.description) { %><div class="ticket-desc"><%- t.description %></div><% } %>
+        <% if (t.pieces.length) { %>
+          <div class="ticket-pj">
+            <% t.pieces.forEach(function(p) { %>
+              <a class="pj-chip" href="/tickets/<%= t.id %>/pieces/<%= p.id %>/telecharger"><%- pjIcon %><%= p.nom %></a>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+      <div style="flex:1;">
+        <% if (t.assignes.length === 0) { %>
+          <span class="muted" style="font-size:12.5px;">Personne</span>
+        <% } else { %>
+          <div class="avatar-stack">
+            <% t.assignes.forEach(function(m) { %>
+              <div class="avatar" style="background:<%= m.avatar_color %>;" title="<%= m.prenom %> <%= m.nom %>"><%= (m.prenom[0]+m.nom[0]).toUpperCase() %></div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+      <div style="flex:.7;font-size:12.5px;color:#9AA7B5;white-space:nowrap;"><%= formatDate(t.created_at.slice(0,10)) %></div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button type="button" class="btn btn-outline"
+          data-id="<%= t.id %>" data-titre="<%= t.titre %>" data-description="<%= t.description || '' %>"
+          data-priorite="<%= t.priorite %>" data-assignes="<%= t.assignes.map(m => m.id).join(',') %>"
+          onclick="ouvrirModalModifierTicket(this)">Modifier</button>
+        <form method="POST" action="/tickets/<%= t.id %>/terminer" style="margin:0;"
+          onsubmit="return confirm('Marquer ce ticket comme terminé ?');">
+          <button type="submit" class="btn btn-primary">Terminer</button>
+        </form>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 14px;">Historique — tickets terminés (<%= termines.length %>)</h3>
+  <% if (termines.length === 0) { %>
+    <div class="empty-state">Aucun ticket terminé pour l'instant.</div>
+  <% } %>
+  <% termines.forEach(function(t) { %>
+    <div class="list-row" style="align-items:center;gap:14px;">
+      <div style="flex:1.8;min-width:180px;">
+        <div style="font-size:13.5px;font-weight:700;color:#5B6B7D;text-decoration:line-through;"><%= t.titre %></div>
+        <% if (t.pieces.length) { %>
+          <div class="ticket-pj">
+            <% t.pieces.forEach(function(p) { %>
+              <a class="pj-chip" href="/tickets/<%= t.id %>/pieces/<%= p.id %>/telecharger"><%- pjIcon %><%= p.nom %></a>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+      <div style="flex:1;font-size:12.5px;color:#5B6B7D;">
+        <% if (t.termine_par) { %>Terminé par <%= t.termine_par.prenom %> <%= t.termine_par.nom %><% } %>
+        <% if (t.termine_at) { %><br><span class="muted"><%= formatDate(t.termine_at.slice(0,10)) %></span><% } %>
+      </div>
+      <div style="flex:.9;text-align:right;">
+        <span class="badge <%= PRIORITE_BADGE[t.priorite] %>"><%= PRIORITE_LABEL[t.priorite] %></span>
+      </div>
+      <form method="POST" action="/tickets/<%= t.id %>/rouvrir" style="flex-shrink:0;margin:0;">
+        <button type="submit" class="btn btn-outline">Rouvrir</button>
+      </form>
+    </div>
+  <% }); %>
+</div>
+
+<div id="modal-ticket" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;" id="modal-ticket-titre">Nouveau ticket</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-ticket').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/tickets" id="form-ticket" enctype="multipart/form-data">
+      <label>Titre</label>
+      <input name="titre" required placeholder="ex. Corriger le formulaire de contact">
+
+      <label>Description</label>
+      <div class="rte">
+        <div class="rte-toolbar">
+          <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+          <button type="button" data-cmd="italic" title="Italique"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" data-cmd="insertUnorderedList" title="Liste à puces">• Liste</button>
+          <button type="button" data-cmd="insertOrderedList" title="Liste numérotée">1. Liste</button>
+        </div>
+        <div class="rte-editor" id="ticket-editor" contenteditable="true"></div>
+      </div>
+      <textarea name="description" id="ticket-description" hidden></textarea>
+
+      <label>Priorité</label>
+      <%- include('partials/select-field', { name: 'priorite', id: 'ticket-priorite', value: 'normale',
+        options: PRIORITES.map(v => ({ value: v, label: PRIORITE_LABEL[v] })) }) %>
+
+      <label>Assigné à</label>
+      <div class="membres-list">
+        <% alternants.forEach(function(a) { %>
+          <label class="membre-check">
+            <input type="checkbox" name="assignes" value="<%= a.id %>" data-assigne-check>
+            <span class="avatar" style="width:24px;height:24px;font-size:9.5px;border-radius:7px;background:<%= a.avatar_color %>;"><%= (a.prenom[0]+a.nom[0]).toUpperCase() %></span>
+            <%= a.prenom %> <%= a.nom %>
+          </label>
+        <% }); %>
+      </div>
+
+      <label>Pièces jointes (PDF, images, Excel… — 10 Mo max par fichier)</label>
+      <input type="file" name="fichiers" multiple>
+      <p class="muted" id="ticket-pj-note" style="font-size:12px;display:none;">Les pièces déjà jointes restent attachées ; les nouveaux fichiers s'ajoutent.</p>
+
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;" id="modal-ticket-submit">Créer le ticket</button>
+    </form>
+    <div id="modal-ticket-actions" style="display:none;margin-top:10px;">
+      <form method="POST" id="form-supprimer-ticket" action=""
+        onsubmit="return confirm('Supprimer définitivement ce ticket et ses pièces jointes ?');">
+        <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer ce ticket</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Éditeur rich-text maison : la barre d'outils agit sur le div contenteditable,
+  // dont le HTML est recopié dans le textarea caché (soumis au serveur, qui le
+  // nettoie via sanitizeHtml).
+  (function () {
+    var editor = document.getElementById('ticket-editor');
+    var hidden = document.getElementById('ticket-description');
+    if (!editor) return;
+    function sync() { hidden.value = editor.innerHTML; }
+    document.querySelectorAll('.rte-toolbar [data-cmd]').forEach(function (b) {
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); }); // ne pas perdre la sélection
+      b.addEventListener('click', function () { document.execCommand(b.dataset.cmd, false, null); editor.focus(); sync(); });
+    });
+    editor.addEventListener('input', sync);
+    var form = document.getElementById('form-ticket');
+    if (form) form.addEventListener('submit', sync);
+    window.__setTicketEditor = function (html) { editor.innerHTML = html || ''; sync(); };
+  })();
+
+  window.ouvrirModalTicket = function () {
+    var modal = document.getElementById('modal-ticket');
+    document.getElementById('modal-ticket-titre').textContent = 'Nouveau ticket';
+    document.getElementById('modal-ticket-submit').textContent = 'Créer le ticket';
+    document.getElementById('form-ticket').action = '/tickets';
+    document.getElementById('modal-ticket-actions').style.display = 'none';
+    document.getElementById('ticket-pj-note').style.display = 'none';
+    modal.querySelector('input[name="titre"]').value = '';
+    if (window.__setTicketEditor) window.__setTicketEditor('');
+    modal.querySelector('input[type="file"]').value = '';
+    setSelect('ticket-priorite', 'normale');
+    modal.querySelectorAll('[data-assigne-check]').forEach(function (c) { c.checked = false; });
+    modal.style.display = 'flex';
+  };
+
+  window.ouvrirModalModifierTicket = function (el) {
+    var d = el.dataset;
+    var modal = document.getElementById('modal-ticket');
+    document.getElementById('modal-ticket-titre').textContent = 'Modifier le ticket';
+    document.getElementById('modal-ticket-submit').textContent = 'Enregistrer';
+    document.getElementById('form-ticket').action = '/tickets/' + d.id;
+    var suppr = document.getElementById('form-supprimer-ticket');
+    suppr.action = '/tickets/' + d.id + '/supprimer';
+    document.getElementById('modal-ticket-actions').style.display = 'block';
+    document.getElementById('ticket-pj-note').style.display = 'block';
+    modal.querySelector('input[name="titre"]').value = d.titre;
+    if (window.__setTicketEditor) window.__setTicketEditor(d.description || '');
+    modal.querySelector('input[type="file"]').value = '';
+    setSelect('ticket-priorite', d.priorite);
+    var assignes = (d.assignes || '').split(',');
+    modal.querySelectorAll('[data-assigne-check]').forEach(function (c) { c.checked = assignes.indexOf(c.value) !== -1; });
+    modal.style.display = 'flex';
+  };
+
+  // Réutilise le helper setSelect s'il existe déjà (défini dans projets.ejs) ;
+  // sinon on le définit ici pour la page Tickets.
+  if (typeof window.setSelect !== 'function') {
+    window.setSelect = function (id, value, placeholderLabel) {
+      var hidden = document.getElementById(id);
+      var field = hidden.closest('.select-field');
+      var opt = field.querySelector('.select-option[data-value="' + value + '"]');
+      field.querySelectorAll('.select-option').forEach(function (o) { o.classList.remove('selected'); });
+      if (!opt) { hidden.value = ''; field.querySelector('.select-label').textContent = placeholderLabel || ''; return; }
+      hidden.value = opt.dataset.value;
+      field.querySelector('.select-label').textContent = opt.dataset.label;
+      opt.classList.add('selected');
+    };
+  }
+</script>
+
+<%- include('partials/footer') %>

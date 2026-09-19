@@ -1,11 +1,18 @@
 <%- include('partials/header', { title: 'Tableau de bord', active: 'dashboard' }) %>
 
+<% const TACHE_LABEL = { a_faire: 'À faire', en_cours: 'En cours', termine: 'Terminé' };
+   const TACHE_BADGE = { a_faire: 'badge-afaire', en_cours: 'badge-encours', termine: 'badge-termine' }; %>
+
 <h2>Bonjour <%= profile.prenom %> 👋</h2>
 
 <div class="<%= profile.heures_eligible ? 'grid-4' : 'grid-3' %>">
   <a href="/conges" class="card" style="display:block;">
     <div class="stat-label">Congés disponibles</div>
     <div class="stat-value" style="color:<%= dispo < 0 ? '#C2502E' : '#1F9D6B' %>;"><%= dispo %> j</div>
+  </a>
+  <a href="/tickets" class="card" style="display:block;">
+    <div class="stat-label">Mes tickets ouverts</div>
+    <div class="stat-value" style="color:#C2502E;"><%= mesTickets.length %></div>
   </a>
   <a href="/conges" class="card" style="display:block;">
     <div class="stat-label">Demandes en attente</div>
@@ -17,12 +24,90 @@
       <div class="stat-value" style="color:#7A53C1;"><%= totalHeures %> h</div>
     </a>
   <% } %>
-  <a href="/paie" class="card" style="display:block;">
-    <div class="stat-label">Dernière fiche de paie</div>
-    <div class="stat-value" style="color:#2E5C8A; font-size:20px;">
-      <%= derniereFiche ? formatPeriode(derniereFiche.periode) : 'Aucune' %>
+</div>
+
+<div class="grid-14">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0;">Mes tickets</h3>
+      <a href="/tickets" class="btn btn-outline">Voir tout</a>
     </div>
-  </a>
+    <% if (mesTickets.length === 0) { %>
+      <p style="color:#9AA7B5;">Aucun ticket en cours. 🎉</p>
+    <% } else { %>
+      <% mesTickets.slice(0, 6).forEach(function(t) { %>
+        <div class="list-row" style="gap:12px;">
+          <span class="badge <%= PRIORITE_BADGE[t.priorite] %>"><%= PRIORITE_LABEL[t.priorite] %></span>
+          <div style="flex:1;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= t.titre %></div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0;">Mes tâches à faire</h3>
+      <a href="/projets?vue=taches" class="btn btn-outline">Voir tout</a>
+    </div>
+    <% if (mesTaches.length === 0) { %>
+      <p style="color:#9AA7B5;">Aucune tâche en cours.</p>
+    <% } else { %>
+      <% mesTaches.slice(0, 6).forEach(function(t) { %>
+        <div class="list-row" style="gap:12px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= t.titre %></div>
+            <div style="font-size:11.5px;color:#9AA7B5;"><%= t.projets ? t.projets.nom : '' %></div>
+          </div>
+          <span class="badge <%= TACHE_BADGE[t.statut] %>"><%= TACHE_LABEL[t.statut] %></span>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid-14">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0;">Mes projets actifs</h3>
+      <a href="/projets" class="btn btn-outline">Voir tout</a>
+    </div>
+    <% if (mesProjets.length === 0) { %>
+      <p style="color:#9AA7B5;">Aucun projet actif.</p>
+    <% } else { %>
+      <% mesProjets.slice(0, 6).forEach(function(p) { %>
+        <div style="padding:10px 2px;border-bottom:1px solid #F1F4F8;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px;">
+            <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= p.nom %></span>
+            <span style="color:#5B6B7D;"><%= p.nbTerminees %>/<%= p.nbTaches %> · <%= p.pct %>%</span>
+          </div>
+          <div class="progress-bar"><div style="width:<%= p.pct %>%;"></div></div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h3>Mes prochaines semaines d'école</h3>
+    <% if (mesSemainesEcole.length === 0) { %>
+      <p style="color:#9AA7B5;">Aucune semaine d'école à venir.</p>
+    <% } else { %>
+      <% mesSemainesEcole.forEach(function(s) { %>
+        <div class="list-row" style="gap:10px;">
+          <span class="type-dot dot-ecole" style="margin:0;"></span>
+          <div style="flex:1;font-size:13px;font-weight:600;">Semaine du <%= formatDate(s.lundi) %></div>
+        </div>
+      <% }); %>
+    <% } %>
+    <% if (derniereFiche) { %>
+      <div class="row-flex" style="margin-top:14px;padding:12px 14px;border:1px solid #EDF0F4;border-radius:12px;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:12px;color:#9AA7B5;">Dernière fiche de paie</div>
+          <div style="font-size:14px;font-weight:700;"><%= formatPeriode(derniereFiche.periode) %></div>
+        </div>
+        <a href="/paie/<%= derniereFiche.id %>/telecharger" class="btn btn-outline">Télécharger</a>
+      </div>
+    <% } %>
+  </div>
 </div>
 
 <div class="card">
@@ -67,46 +152,6 @@
     <% }); %>
   </div>
   <% } %>
-</div>
-
-<div class="grid-14">
-  <div class="card">
-    <h3>Mes dernières demandes de congés</h3>
-    <% if (mesConges.length === 0) { %>
-      <p style="color:#9AA7B5;">Aucune demande pour l'instant.</p>
-    <% } else { %>
-      <div class="table-scroll">
-      <table>
-        <tr><th>Dates</th><th>Jours</th><th>Statut</th></tr>
-        <% mesConges.forEach(function(c) { %>
-          <tr>
-            <td><%= formatDate(c.date_debut) %> → <%= formatDate(c.date_fin) %></td>
-            <td><%= c.jours %></td>
-            <td><span class="badge badge-<%= c.statut %>"><%= c.statut %></span></td>
-          </tr>
-        <% }); %>
-      </table>
-      </div>
-    <% } %>
-  </div>
-
-  <div class="card">
-    <h3>Dernière fiche de paie</h3>
-    <% if (!derniereFiche) { %>
-      <div class="empty-state">Aucune fiche déposée.</div>
-    <% } else { %>
-      <div class="row-flex" style="padding:14px 16px;border:1px solid #EDF0F4;border-radius:12px;">
-        <div style="width:42px;height:42px;border-radius:10px;background:#EAF1F8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="1.8"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"></path><path d="M14 3v4h4M8.5 12.5h7M8.5 16h7"></path></svg>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:14.5px;font-weight:700;"><%= formatPeriode(derniereFiche.periode) %></div>
-          <div style="font-size:12px;color:#9AA7B5;">Déposée le <%= formatDate(derniereFiche.date_depot) %></div>
-        </div>
-        <a href="/paie/<%= derniereFiche.id %>/telecharger" class="btn btn-outline">Télécharger</a>
-      </div>
-    <% } %>
-  </div>
 </div>
 
 <%- include('partials/footer') %>

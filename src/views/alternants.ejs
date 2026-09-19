@@ -1,4 +1,4 @@
-<%- include('partials/header', { title: 'Gestion des alternants', active: 'alternants' }) %>
+<%- include('partials/header', { title: 'Alternants & planning', active: 'alternants' }) %>
 
 <% if (error && !showModal) { %><div class="error"><%= error %></div><% } %>
 
@@ -26,6 +26,10 @@
 
 <% if (selected) { %>
   <%- include('partials/fiche-alternant', Object.assign({ societes }, selected)) %>
+<% } %>
+
+<% if (typeof planningGlobal !== 'undefined' && planningGlobal) { %>
+  <%- include('partials/planning-global', Object.assign({ moisBase }, planningGlobal)) %>
 <% } %>
 
 <div id="modal-ajouter" class="modal-overlay" style="display:<%= showModal ? 'flex' : 'none' %>;">
