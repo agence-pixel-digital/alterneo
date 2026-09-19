@@ -59,17 +59,24 @@ router.get('/tickets', async (req, res) => {
       PRIORITES, PRIORITE_LABEL, PRIORITE_BADGE, error: null
     });
   }
+  // Liste des alternants pour la modale d'assignation (lecture partagée via
+  // supabaseAdmin : la RLS `profiles` ne laisse pas un alternant lire les autres).
+  const { data: alternants } = await supabaseAdmin.from('profiles')
+    .select('id, prenom, nom, avatar_color').eq('role', 'alternant').order('nom');
   res.render('tickets-alternant', {
-    ouverts, termines, PRIORITE_LABEL, PRIORITE_BADGE, moi: req.profile.id
+    ouverts, termines, alternants: alternants || [],
+    PRIORITES, PRIORITE_LABEL, PRIORITE_BADGE, moi: req.profile.id
   });
 });
 
-// Création : réservée à l'admin.
-router.post('/tickets', requireAdmin, upload.array('fichiers', 10), async (req, res) => {
+// Création : admin ET alternants. Un alternant créateur est ajouté d'office aux
+// assignés (sinon il ne verrait pas son propre ticket, la RLS le filtrant).
+router.post('/tickets', upload.array('fichiers', 10), async (req, res) => {
   const titre = (req.body.titre || '').trim();
   const priorite = PRIORITES.includes(req.body.priorite) ? req.body.priorite : 'normale';
   const description = sanitizeHtml(req.body.description) || null;
   const assignes = normaliseAssignes(req.body);
+  if (req.profile.role !== 'admin' && !assignes.includes(req.profile.id)) assignes.push(req.profile.id);
 
   if (!titre) return res.redirect('/tickets');
 
