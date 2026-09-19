@@ -1,4 +1,4 @@
-<%- include('partials/header', { title: 'Envoi comptable — ' + formatPeriode(mois), active: 'envoi-comptable' }) %>
+<%- include('partials/header', { title: 'Envoi comptable — ' + formatPeriode(mois), active: 'paie' }) %>
 
 <% if (error) { %><div class="error"><%= error %></div><% } %>
 
@@ -27,6 +27,6 @@
   </div>
 <% }); %>
 
-<a href="/envoi-comptable" class="btn btn-outline">Retour</a>
+<a href="/paie" class="btn btn-outline">Retour aux fiches de paie</a>
 
 <%- include('partials/footer') %>

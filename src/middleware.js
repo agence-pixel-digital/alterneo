@@ -28,9 +28,9 @@ async function requireAuth(req, res, next) {
       .from('tickets')
       .select('id', { count: 'exact', head: true })
       .eq('statut', 'ouvert');
-    res.locals.ticketsOuverts = count || 0;
+    res.locals.navTicketsOuverts = count || 0;
   } catch (e) {
-    res.locals.ticketsOuverts = 0;
+    res.locals.navTicketsOuverts = 0;
   }
   next();
 }

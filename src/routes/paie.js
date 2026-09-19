@@ -18,11 +18,15 @@ router.get('/paie', async (req, res) => {
   const profile = req.profile;
 
   if (profile.role === 'admin') {
-    const [{ data: alternants }, { data: recent }] = await Promise.all([
+    const [{ data: alternants }, { data: recent }, { data: societes }] = await Promise.all([
       db.from('profiles').select('*').eq('role', 'alternant').order('nom'),
-      db.from('fiches_paie').select('*, profiles!fiches_paie_alternant_id_fkey(prenom,nom,avatar_color)').order('date_depot', { ascending: false }).limit(15)
+      db.from('fiches_paie').select('*, profiles!fiches_paie_alternant_id_fkey(prenom,nom,avatar_color)').order('date_depot', { ascending: false }).limit(15),
+      db.from('societes').select('*').order('nom')
     ]);
-    return res.render('paie-admin', { alternants: alternants || [], recent: recent || [], error: null });
+    return res.render('paie-admin', {
+      alternants: alternants || [], recent: recent || [], societes: societes || [], error: null,
+      envoiEnvoye: req.query.envoi === '1', envoiErreur: req.query.envoiErreur || null
+    });
   }
 
   const { data: fiches } = await db.from('fiches_paie').select('*').eq('alternant_id', profile.id).order('periode', { ascending: false });
@@ -32,11 +36,12 @@ router.get('/paie', async (req, res) => {
 router.post('/paie', requireAdmin, upload.single('fichier'), async (req, res) => {
   const { alternant_id, periode } = req.body;
   const rerender = async (error) => {
-    const [{ data: alternants }, { data: recent }] = await Promise.all([
+    const [{ data: alternants }, { data: recent }, { data: societes }] = await Promise.all([
       req.db.from('profiles').select('*').eq('role', 'alternant').order('nom'),
-      req.db.from('fiches_paie').select('*, profiles!fiches_paie_alternant_id_fkey(prenom,nom,avatar_color)').order('date_depot', { ascending: false }).limit(15)
+      req.db.from('fiches_paie').select('*, profiles!fiches_paie_alternant_id_fkey(prenom,nom,avatar_color)').order('date_depot', { ascending: false }).limit(15),
+      req.db.from('societes').select('*').order('nom')
     ]);
-    res.render('paie-admin', { alternants: alternants || [], recent: recent || [], error });
+    res.render('paie-admin', { alternants: alternants || [], recent: recent || [], societes: societes || [], error, envoiEnvoye: false, envoiErreur: null });
   };
 
   if (!alternant_id || !periode || !req.file) return rerender('Veuillez remplir tous les champs et joindre un PDF.');
