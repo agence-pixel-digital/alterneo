@@ -1,11 +1,8 @@
 <%- include('partials/header', { title: client.societe || client.client || 'Fiche client', active: 'clients' }) %>
 
-<a href="/clients" class="btn btn-outline" style="margin-bottom:16px;">← Retour aux clients</a>
+<a href="/clients" class="btn btn-outline" style="margin-bottom:16px;">&larr; Retour aux clients</a>
 
-<%
-  var lienSite = client.lien_connexion || client.site_web;
-  function val(v) { return v ? v : '<span class="muted">—</span>'; }
-%>
+<% var lienSite = client.lien_connexion || client.site_web; %>
 
 <div class="card">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
@@ -28,18 +25,26 @@
 
   <div class="fiche-grid">
     <div><span class="fiche-label">Site web</span>
-      <% if (client.site_web) { %><a href="<%= client.site_web %>" target="_blank" rel="noopener noreferrer"><%= client.site_web %></a><% } else { %><span class="muted">—</span><% } %>
+      <% if (client.site_web) { %><a href="<%= client.site_web %>" target="_blank" rel="noopener noreferrer"><%= client.site_web %></a><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
-    <div><span class="fiche-label">Société</span><%- val(client.societe) %></div>
-    <div><span class="fiche-label">Client</span><%- val(client.client) %></div>
+    <div><span class="fiche-label">Société</span>
+      <% if (client.societe) { %><%= client.societe %><% } else { %><span class="muted">&mdash;</span><% } %>
+    </div>
+    <div><span class="fiche-label">Client</span>
+      <% if (client.client) { %><%= client.client %><% } else { %><span class="muted">&mdash;</span><% } %>
+    </div>
     <div><span class="fiche-label">Téléphone</span>
-      <% if (client.telephone) { %><a href="tel:<%= client.telephone.replace(/\s/g,'') %>"><%= client.telephone %></a><% } else { %><span class="muted">—</span><% } %>
+      <% if (client.telephone) { %><a href="tel:<%= client.telephone.replace(/\s/g,'') %>"><%= client.telephone %></a><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div><span class="fiche-label">E-mail</span>
-      <% if (client.email) { %><a href="mailto:<%= client.email %>"><%= client.email %></a><% } else { %><span class="muted">—</span><% } %>
+      <% if (client.email) { %><a href="mailto:<%= client.email %>"><%= client.email %></a><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
-    <div><span class="fiche-label">Siret</span><%- val(client.siret) %></div>
-    <div style="grid-column:1/-1;"><span class="fiche-label">Adresse</span><%- val(client.adresse) %></div>
+    <div><span class="fiche-label">Siret</span>
+      <% if (client.siret) { %><%= client.siret %><% } else { %><span class="muted">&mdash;</span><% } %>
+    </div>
+    <div style="grid-column:1/-1;"><span class="fiche-label">Adresse</span>
+      <% if (client.adresse) { %><%= client.adresse %><% } else { %><span class="muted">&mdash;</span><% } %>
+    </div>
   </div>
 
   <% if (client.note) { %>
@@ -75,8 +80,19 @@
       style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #F1F4F8;">
       <div style="width:200px;">
         <label style="margin-top:0;">Forfait</label>
-        <%- include('partials/select-field', { name: 'type', id: 'forfait-type', value: 'hebergement',
-          options: FORFAITS.map(v => ({ value: v, label: FORFAIT_LABEL[v] })) }) %>
+        <% var fopts = FORFAITS.map(function (v) { return { value: v, label: FORFAIT_LABEL[v] }; }); %>
+        <div class="select-field">
+          <button type="button" class="select-display">
+            <span class="select-label"><%= FORFAIT_LABEL['hebergement'] %></span>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+          <input type="hidden" name="type" id="forfait-type" class="select-value" value="hebergement">
+          <div class="select-popup">
+            <% fopts.forEach(function (o) { %>
+              <div class="select-option <%= o.value === 'hebergement' ? 'selected' : '' %>" data-value="<%= o.value %>" data-label="<%= o.label %>"><%= o.label %></div>
+            <% }); %>
+          </div>
+        </div>
       </div>
       <div style="flex:1;min-width:180px;">
         <label style="margin-top:0;">Libellé (optionnel)</label>
@@ -99,7 +115,7 @@
   <div class="modal-box">
     <div class="modal-box-header">
       <h3 style="margin:0;">Modifier le client</h3>
-      <button type="button" class="modal-close" onclick="document.getElementById('modal-client').style.display='none'">✕</button>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-client').style.display='none'">&times;</button>
     </div>
     <form method="POST" action="/clients/<%= client.id %>">
       <label>Société</label>
@@ -107,7 +123,7 @@
       <label>Client (contact)</label>
       <input name="client" value="<%= client.client || '' %>">
       <label>Site web</label>
-      <input name="site_web" value="<%= client.site_web || '' %>" placeholder="https://…">
+      <input name="site_web" value="<%= client.site_web || '' %>" placeholder="https://...">
       <label>Téléphone</label>
       <input name="telephone" value="<%= client.telephone || '' %>">
       <label>E-mail</label>
@@ -117,7 +133,7 @@
       <label>Adresse</label>
       <input name="adresse" value="<%= client.adresse || '' %>">
       <label>Lien de connexion au site (admin)</label>
-      <input name="lien_connexion" value="<%= client.lien_connexion || '' %>" placeholder="https://…/wp-admin">
+      <input name="lien_connexion" value="<%= client.lien_connexion || '' %>" placeholder="https://.../wp-admin">
       <label>Note</label>
       <textarea name="note" rows="3"><%= client.note || '' %></textarea>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;">Enregistrer</button>
