@@ -1,10 +1,9 @@
 <div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
     <h3 style="margin:0;">Projets (<span id="projet-count"><%= projetsListe.length %></span>)</h3>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <input type="search" id="projet-search" placeholder="Rechercher un projet…" autocomplete="off"
-        style="flex:0 0 auto;width:210px;height:40px;padding:0 14px;border:1px solid #DCE2EA;border-radius:10px;font-size:13.5px;">
-      <form method="GET" action="/projets" class="js-autofilter" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0;">
+    <div class="inline-filter-bar">
+      <input type="search" id="projet-search" class="search-input" placeholder="Rechercher un projet…" autocomplete="off" style="width:220px;">
+      <form method="GET" action="/projets" class="inline-filter-bar js-autofilter">
         <div style="width:165px;">
           <%- include('select-field', {
             name: 'pstatut', value: filtreStatutProjet, placeholder: 'Tous les statuts',

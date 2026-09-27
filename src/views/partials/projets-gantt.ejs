@@ -18,7 +18,7 @@
         }) %>
       </div>
     <% } %>
-    <div style="width:150px;"><%- include('month-input', { name: 'mois', value: filtreMois, clearable: true }) %></div>
+    <div style="width:175px;"><%- include('month-input', { name: 'mois', value: filtreMois, clearable: true }) %></div>
     <% if (filtreMembre || filtreMois) { %><a href="/projets?vue=gantt" class="btn btn-outline">Réinitialiser</a><% } %>
   </form>
 

@@ -1,127 +1,214 @@
 <%- include('partials/header', { title: fiche.societe || fiche.client || 'Fiche client', active: 'clients' }) %>
 
-<a href="/clients" class="btn btn-outline" style="margin-bottom:16px;">&larr; Retour aux clients</a>
+<%
+  // Icônes (tracés statiques, style Lucide), rendues non échappées via ico('nom').
+  var P = {
+    globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+    building: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+    pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+    pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+    trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    note: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+    server: '<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/>',
+    wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+    box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'
+  };
+  var ico = function (nom, taille) {
+    taille = taille || 18;
+    return '<svg width="' + taille + '" height="' + taille + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + P[nom] + '</svg>';
+  };
+  var FORFAIT_ICO = { hebergement: ['server', 'ci-blue'], nom_de_domaine: ['globe', 'ci-purple'], maintenance_classique: ['wrench', 'ci-green'], maintenance_premium: ['shield', 'ci-orange'], autre: ['box', 'ci-grey'] };
 
-<% var boutonMainWP = fiche.lienMainWP && fiche.mainwpConnecte !== false; %>
-<% var lienSite = boutonMainWP ? fiche.site_web : (fiche.lien_connexion || fiche.site_web); %>
+  // Liens sûrs : on force http(s) (évite un « javascript: » saisi dans la fiche).
+  var urlSure = function (u) { if (!u) return null; return /^https?:\/\//i.test(u) ? u : 'https://' + u; };
+  var siteAffiche = fiche.site_web ? fiche.site_web.replace(/^https?:\/\//i, '').replace(/\/+$/, '') : '';
+
+  var nom = fiche.societe || fiche.client || 'Client sans nom';
+  var initiales = nom.split(/[\s'-]+/).filter(Boolean).slice(0, 2).map(function (m) { return m[0]; }).join('').toUpperCase();
+  var COULEURS = ['#2E5C8A', '#7A53C1', '#1F8E5F', '#C2502E', '#B7791F', '#2A7F9E', '#8A4F7D'];
+  var h = 0; for (var i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) >>> 0;
+  var couleur = COULEURS[h % COULEURS.length];
+
+  var boutonMainWP = fiche.lienMainWP && fiche.mainwpConnecte !== false;
+  var lienSite = urlSure(boutonMainWP ? fiche.site_web : (fiche.lien_connexion || fiche.site_web));
+%>
+
+<a href="/clients" class="back-link">&larr; Retour aux clients</a>
 
 <div class="card">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
-    <div>
-      <h3 style="margin:0;"><%= fiche.societe || fiche.client || 'Client sans nom' %></h3>
-      <% if (fiche.societe && fiche.client) { %><div style="font-size:13px;color:#9AA7B5;margin-top:3px;"><%= fiche.client %></div><% } %>
+  <div class="client-hero">
+    <div class="client-hero-avatar" style="background:<%= couleur %>;"><%= initiales %></div>
+    <div class="client-hero-main">
+      <h2><%= nom %></h2>
+      <div class="client-hero-sub">
+        <% if (fiche.societe && fiche.client) { %><span><%- ico('user', 15) %><%= fiche.client %></span><% } %>
+        <% if (fiche.site_web) { %><a href="<%= urlSure(fiche.site_web) %>" target="_blank" rel="noopener noreferrer"><%- ico('globe', 15) %><%= siteAffiche %></a><% } %>
+      </div>
+      <% if (fiche.forfaits.length) { %>
+        <div class="client-hero-badges">
+          <% fiche.forfaits.forEach(function (f) { %>
+            <span class="badge forfait-<%= f.type %>"><%= FORFAIT_LABEL[f.type] %></span>
+          <% }); %>
+        </div>
+      <% } %>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <% if (fiche.lienMainWP && fiche.mainwpConnecte !== false) { %>
+    <div class="client-hero-actions">
+      <% if (boutonMainWP) { %>
         <a href="<%= fiche.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary"
           title="Ouvre le wp-admin du site via MainWP (session MainWP requise)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-          Connexion en 1 clic
+          <span style="margin-right:6px;display:inline-flex;"><%- ico('zap', 15) %></span>Connexion en 1 clic
         </a>
       <% } %>
       <% if (lienSite) { %>
         <a href="<%= lienSite %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
-          <%= boutonMainWP ? 'Ouvrir le site' : 'Se connecter au site' %>
+          <span style="margin-right:6px;display:inline-flex;"><%- ico('external', 15) %></span><%= boutonMainWP ? 'Ouvrir le site' : 'Se connecter au site' %>
         </a>
       <% } %>
-      <% if (fiche.lienMainWP && fiche.mainwpConnecte === false) { %>
-        <span class="muted" style="font-size:12.5px;align-self:center;" title="Ce domaine n'est pas géré par le tableau de bord MainWP (site non WordPress ou plugin MainWP Child absent).">Pas connecté à MainWP</span>
-      <% } %>
       <% if (isAdmin) { %>
-        <button type="button" class="btn btn-outline" onclick="ouvrirModalModifierClient()">Modifier</button>
+        <button type="button" class="btn btn-outline" onclick="ouvrirModalModifierClient()">
+          <span style="margin-right:6px;display:inline-flex;"><%- ico('pencil', 15) %></span>Modifier
+        </button>
       <% } %>
     </div>
   </div>
-
-  <div class="fiche-grid">
-    <div><span class="fiche-label">Site web</span>
-      <% if (fiche.site_web) { %><a href="<%= fiche.site_web %>" target="_blank" rel="noopener noreferrer"><%= fiche.site_web %></a><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-    <div><span class="fiche-label">Société</span>
-      <% if (fiche.societe) { %><%= fiche.societe %><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-    <div><span class="fiche-label">Client</span>
-      <% if (fiche.client) { %><%= fiche.client %><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-    <div><span class="fiche-label">Téléphone</span>
-      <% if (fiche.telephone) { %><a href="tel:<%= fiche.telephone.replace(/\s/g,'') %>"><%= fiche.telephone %></a><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-    <div><span class="fiche-label">E-mail</span>
-      <% if (fiche.email) { %><a href="mailto:<%= fiche.email %>"><%= fiche.email %></a><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-    <div><span class="fiche-label">Siret</span>
-      <% if (fiche.siret) { %><%= fiche.siret %><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-    <div style="grid-column:1/-1;"><span class="fiche-label">Adresse</span>
-      <% if (fiche.adresse) { %><%= fiche.adresse %><% } else { %><span class="muted">&mdash;</span><% } %>
-    </div>
-  </div>
-
-  <% if (fiche.note) { %>
-    <div style="margin-top:16px;">
-      <span class="fiche-label">Note</span>
-      <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55;"><%= fiche.note %></div>
+  <% if (fiche.lienMainWP && fiche.mainwpConnecte === false) { %>
+    <div class="mainwp-hint" style="margin-top:12px;" title="Ce domaine n'est pas géré par le tableau de bord MainWP (site non WordPress ou plugin MainWP Child absent).">
+      <%- ico('zap', 13) %>Pas connecté à MainWP
     </div>
   <% } %>
 </div>
 
-<div class="card">
-  <h3 style="margin:0 0 14px;">Forfaits &amp; services (<%= fiche.forfaits.length %>)</h3>
+<div class="fiche-layout">
+  <div>
+    <div class="card">
+      <div class="card-title">Coordonnées</div>
 
-  <% if (fiche.forfaits.length === 0) { %>
-    <div class="empty-state" style="padding:18px;">Aucun forfait pour ce client pour l'instant.</div>
-  <% } %>
+      <div class="contact-row">
+        <div class="contact-icon ci-blue"><%- ico('globe') %></div>
+        <div class="contact-body">
+          <div class="contact-label">Site web</div>
+          <% if (fiche.site_web) { %>
+            <div class="contact-value"><a href="<%= urlSure(fiche.site_web) %>" target="_blank" rel="noopener noreferrer"><%= siteAffiche %></a></div>
+          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
+        </div>
+        <% if (fiche.site_web) { %>
+          <a class="icon-btn" href="<%= urlSure(fiche.site_web) %>" target="_blank" rel="noopener noreferrer" title="Ouvrir le site"><%- ico('external', 15) %></a>
+        <% } %>
+      </div>
 
-  <% fiche.forfaits.forEach(function(f) { %>
-    <div class="list-row" style="align-items:center;gap:12px;">
-      <span class="badge forfait-<%= f.type %>"><%= FORFAIT_LABEL[f.type] %></span>
-      <div style="flex:1;font-size:13.5px;"><%= f.libelle || '' %></div>
-      <% if (isAdmin) { %>
-        <form method="POST" action="/clients/<%= fiche.id %>/forfaits/<%= f.id %>/supprimer" style="margin:0;"
-          onsubmit="return confirm('Retirer ce forfait ?');">
-          <button type="submit" class="btn btn-outline" style="padding:6px 12px;">Retirer</button>
-        </form>
-      <% } %>
-    </div>
-  <% }); %>
-
-  <% if (isAdmin) { %>
-    <form method="POST" action="/clients/<%= fiche.id %>/forfaits"
-      style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #F1F4F8;">
-      <div style="width:200px;">
-        <label style="margin-top:0;">Forfait</label>
-        <% var fopts = FORFAITS.map(function (v) { return { value: v, label: FORFAIT_LABEL[v] }; }); %>
-        <div class="select-field">
-          <button type="button" class="select-display">
-            <span class="select-label"><%= FORFAIT_LABEL['hebergement'] %></span>
-            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
-          </button>
-          <input type="hidden" name="type" id="forfait-type" class="select-value" value="hebergement">
-          <div class="select-popup">
-            <% fopts.forEach(function (o) { %>
-              <div class="select-option <%= o.value === 'hebergement' ? 'selected' : '' %>" data-value="<%= o.value %>" data-label="<%= o.label %>"><%= o.label %></div>
-            <% }); %>
-          </div>
+      <div class="contact-row">
+        <div class="contact-icon ci-purple"><%- ico('user') %></div>
+        <div class="contact-body">
+          <div class="contact-label">Client (contact)</div>
+          <% if (fiche.client) { %><div class="contact-value"><%= fiche.client %></div>
+          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
         </div>
       </div>
-      <div style="flex:1;min-width:180px;">
-        <label style="margin-top:0;">Libellé (optionnel)</label>
-        <input name="libelle" placeholder="ex. monsite.fr" style="margin-bottom:0;">
+
+      <div class="contact-row">
+        <div class="contact-icon ci-green"><%- ico('phone') %></div>
+        <div class="contact-body">
+          <div class="contact-label">Téléphone</div>
+          <% if (fiche.telephone) { %>
+            <div class="contact-value"><a href="tel:<%= fiche.telephone.replace(/[^\d+]/g, '') %>"><%= fiche.telephone %></a></div>
+          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
+        </div>
+        <% if (fiche.telephone) { %>
+          <button type="button" class="icon-btn js-copy" data-copy="<%= fiche.telephone %>" title="Copier le numéro"><%- ico('copy', 15) %></button>
+        <% } %>
       </div>
-      <button type="submit" class="btn btn-primary">Ajouter</button>
-    </form>
-  <% } %>
+
+      <div class="contact-row">
+        <div class="contact-icon ci-orange"><%- ico('mail') %></div>
+        <div class="contact-body">
+          <div class="contact-label">E-mail</div>
+          <% if (fiche.email) { %>
+            <div class="contact-value"><a href="mailto:<%= fiche.email %>"><%= fiche.email %></a></div>
+          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
+        </div>
+        <% if (fiche.email) { %>
+          <button type="button" class="icon-btn js-copy" data-copy="<%= fiche.email %>" title="Copier l'e-mail"><%- ico('copy', 15) %></button>
+        <% } %>
+      </div>
+
+      <div class="contact-row">
+        <div class="contact-icon ci-grey"><%- ico('building') %></div>
+        <div class="contact-body">
+          <div class="contact-label">Siret</div>
+          <% if (fiche.siret) { %><div class="contact-value"><%= fiche.siret %></div>
+          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
+        </div>
+        <% if (fiche.siret) { %>
+          <button type="button" class="icon-btn js-copy" data-copy="<%= fiche.siret %>" title="Copier le Siret"><%- ico('copy', 15) %></button>
+        <% } %>
+      </div>
+
+      <div class="contact-row">
+        <div class="contact-icon ci-red"><%- ico('pin') %></div>
+        <div class="contact-body">
+          <div class="contact-label">Adresse</div>
+          <% if (fiche.adresse) { %><div class="contact-value"><%= fiche.adresse %></div>
+          <% } else { %><div class="contact-value vide">Non renseignée</div><% } %>
+        </div>
+        <% if (fiche.adresse) { %>
+          <a class="icon-btn" href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(fiche.adresse) %>" target="_blank" rel="noopener noreferrer" title="Voir sur Google Maps"><%- ico('external', 15) %></a>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (fiche.note) { %>
+      <div class="card">
+        <div class="card-title"><span style="display:inline-flex;align-items:center;gap:8px;"><%- ico('note', 17) %>Note</span></div>
+        <div class="note-box" style="margin-top:10px;"><%= fiche.note %></div>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Forfaits &amp; services <span class="count"><%= fiche.forfaits.length %></span></div>
+
+    <% if (fiche.forfaits.length === 0) { %>
+      <div class="empty-state" style="padding:22px 10px;">Aucun forfait pour ce client pour l'instant.</div>
+    <% } %>
+
+    <% fiche.forfaits.forEach(function (f) { var fi = FORFAIT_ICO[f.type] || FORFAIT_ICO.autre; %>
+      <div class="forfait-item">
+        <div class="forfait-icon <%= fi[1] %>"><%- ico(fi[0]) %></div>
+        <div style="flex:1;min-width:0;">
+          <div class="forfait-nom"><%= FORFAIT_LABEL[f.type] %></div>
+          <% if (f.libelle) { %><div class="forfait-libelle"><%= f.libelle %></div><% } %>
+        </div>
+        <% if (isAdmin) { %>
+          <form method="POST" action="/clients/<%= fiche.id %>/forfaits/<%= f.id %>/supprimer" style="margin:0;"
+            onsubmit="return confirm('Retirer ce forfait ?');">
+            <button type="submit" class="icon-btn danger" title="Retirer ce forfait"><%- ico('x', 15) %></button>
+          </form>
+        <% } %>
+      </div>
+    <% }); %>
+
+    <% if (isAdmin) { %>
+      <form method="POST" action="/clients/<%= fiche.id %>/forfaits" class="forfait-add">
+        <%- include('partials/select-field', {
+          name: 'type', id: 'forfait-type', value: 'hebergement',
+          options: FORFAITS.map(function (v) { return { value: v, label: FORFAIT_LABEL[v] }; })
+        }) %>
+        <input name="libelle" placeholder="Libellé (ex. monsite.fr)">
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+    <% } %>
+  </div>
 </div>
 
 <% if (isAdmin) { %>
-<div style="margin-top:4px;">
-  <form method="POST" action="/clients/<%= fiche.id %>/supprimer"
-    onsubmit="return confirm('Supprimer définitivement ce client et tous ses forfaits ?');">
-    <button type="submit" class="btn" style="background:#C2502E;color:#fff;">Supprimer ce client</button>
-  </form>
-</div>
-
 <div id="modal-client" class="modal-overlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-box-header">
@@ -149,6 +236,12 @@
       <textarea name="note" rows="3"><%= fiche.note || '' %></textarea>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;">Enregistrer</button>
     </form>
+    <form method="POST" action="/clients/<%= fiche.id %>/supprimer" style="margin:12px 0 0;padding-top:12px;border-top:1px solid #F1F4F8;"
+      onsubmit="return confirm('Supprimer définitivement ce client et tous ses forfaits ?');">
+      <button type="submit" class="btn btn-danger" style="width:100%;">
+        <span style="margin-right:6px;display:inline-flex;"><%- ico('trash', 15) %></span>Supprimer ce client
+      </button>
+    </form>
   </div>
 </div>
 
@@ -158,5 +251,20 @@
   };
 </script>
 <% } %>
+
+<script>
+  // Boutons « copier » (téléphone, e-mail, siret) : coche verte 1,5 s en retour.
+  document.querySelectorAll('.js-copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(btn.dataset.copy || '').then(function () {
+        var avant = btn.innerHTML;
+        btn.classList.add('ok');
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+        setTimeout(function () { btn.classList.remove('ok'); btn.innerHTML = avant; }, 1500);
+      });
+    });
+  });
+</script>
 
 <%- include('partials/footer') %>

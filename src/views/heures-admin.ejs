@@ -33,7 +33,7 @@
           options: [{ value: '', label: 'Tous les alternants' }].concat(alternants.map(a => ({ value: a.id, label: a.prenom + ' ' + a.nom })))
         }) %>
       </div>
-      <div style="width:150px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois, clearable: true }) %></div>
+      <div style="width:175px;"><%- include('partials/month-input', { name: 'mois', value: filtreMois, clearable: true }) %></div>
       <% if (filtreAlt || filtreMois) { %><a href="/heures" class="btn btn-outline">Réinitialiser</a><% } %>
     </form>
   </div>

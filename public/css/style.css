@@ -43,7 +43,11 @@ table { width:100%; border-collapse: collapse; }
 th { text-align:left; font-size:12px; color:#8794A3; text-transform:uppercase; padding:12px 10px; border-bottom:1px solid #EAEDF2; }
 td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 
-.btn { display:inline-block; padding:10px 18px; border-radius:10px; font-size:14px; font-weight:700; border:0; cursor:pointer; }
+/* Bouton : hauteur fixe de 40px (bordure 1.5 + padding 9.5 + ligne 18), identique
+   pour toutes les variantes, afin d'être aligné avec les champs des barres de filtres. */
+.btn { display:inline-flex; align-items:center; justify-content:center; padding:9.5px 18px; line-height:18px; border-radius:10px; font-size:14px; font-weight:700; border:1.5px solid transparent; cursor:pointer; white-space:nowrap; }
+.btn svg { flex-shrink:0; }
+.btn-sm { padding:5.5px 12px; font-size:12.5px; line-height:16px; border-radius:9px; }
 .btn-primary { background:#2E5C8A; color:#fff; }
 .btn-outline { background:#fff; border:1.5px solid #E2E7EE; color:#2E5C8A; }
 .btn-success { background:#1F8E5F; color:#fff; }
@@ -74,8 +78,16 @@ td { padding:14px 10px; border-bottom:1px solid #F1F4F8; font-size:14px; }
 .legend { display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
 .legend-item { display:flex; align-items:center; gap:7px; font-size:12.5px; color:#5B6B7D; font-weight:600; }
 
-.inline-filter-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.inline-filter-bar .select-field, .inline-filter-bar .date-field, .inline-filter-bar .date-field .date-display { margin-bottom:0; }
+/* Barres de filtres / d'actions : tous les contrôles font 40px de haut et n'ont
+   pas de marge basse (sinon ils sont décalés vers le haut par rapport aux boutons). */
+.inline-filter-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0; }
+.inline-filter-bar .select-field, .inline-filter-bar .date-field, .inline-filter-bar .date-field .date-display, .inline-filter-bar input { margin-bottom:0; }
+.inline-filter-bar .select-display, .inline-filter-bar .date-display, .inline-filter-bar .statut-pill { height:40px; padding-top:0; padding-bottom:0; }
+.inline-filter-bar .date-field .date-icon { top:12px; }
+.search-input { height:40px; max-width:100%; margin:0; padding:0 14px 0 38px; border:1.5px solid #E2E7EE; border-radius:10px; font-size:13.5px; color:#1C2A3A;
+  -webkit-appearance:none; appearance:none;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239AA7B5' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 13px center; }
+.search-input:focus, .select-display:focus { outline:none; border-color:#2E5C8A; box-shadow:0 0 0 3px rgba(46,92,138,.12); }
 
 .planning-global-table { border-collapse:collapse; }
 .planning-global-table th, .planning-global-table td { padding:0; text-align:center; border-bottom:1px solid #F1F4F8; }
@@ -259,7 +271,7 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
   .alternant-tile { padding:14px 8px; }
   .legend { gap:10px; }
   .legend-item { font-size:11px; }
-  .inline-filter-bar > div { width:100% !important; }
+  .inline-filter-bar > div, .inline-filter-bar > form, .inline-filter-bar .search-input { width:100% !important; }
   .inline-filter-bar { width:100%; }
 }
 
@@ -348,3 +360,63 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
 .gantt-name { position:sticky; left:0; z-index:5; background:#fff; }
 .gantt-weekend { position:absolute; top:0; bottom:0; background:#EFE9F9; border-left:1px dashed #B9A3E3; border-right:1px dashed #B9A3E3; pointer-events:none; }
 .gantt-aujourdhui { position:absolute; top:0; bottom:0; width:0; border-left:2px solid #C2502E; z-index:4; pointer-events:none; }
+
+/* ===== Fiche client ===== */
+.back-link { display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:600; color:#5B6B7D; margin-bottom:16px; }
+.back-link:hover { color:#2E5C8A; }
+.client-hero { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+.client-hero-avatar { width:64px; height:64px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#fff; flex-shrink:0; letter-spacing:.5px; }
+.client-hero-main { flex:1; min-width:200px; }
+.client-hero-main h2 { margin:0; font-size:22px; font-weight:800; letter-spacing:-.01em; }
+.client-hero-sub { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:6px; font-size:13.5px; color:#5B6B7D; }
+.client-hero-sub span, .client-hero-sub a { display:inline-flex; align-items:center; gap:6px; }
+.client-hero-sub a:hover { color:#2E5C8A; }
+.client-hero-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.client-hero-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+
+.fiche-layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:18px; align-items:start; }
+.card-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 6px; font-size:15px; font-weight:800; }
+.card-title .count { font-size:12px; font-weight:700; color:#5B6B7D; background:#EEF1F5; border-radius:20px; padding:2px 9px; }
+
+.contact-row { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid #F1F4F8; }
+.contact-row:last-child { border-bottom:0; padding-bottom:2px; }
+.contact-icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ci-blue { background:#EAF1F8; color:#2E5C8A; }
+.ci-green { background:#E2F3EB; color:#1F8E5F; }
+.ci-purple { background:#EFE9F9; color:#7A53C1; }
+.ci-orange { background:#FBF3E2; color:#B7791F; }
+.ci-red { background:#F8E8E2; color:#C2502E; }
+.ci-grey { background:#EEF1F5; color:#5B6B7D; }
+.contact-body { flex:1; min-width:0; }
+.contact-label { font-size:11.5px; font-weight:700; color:#9AA7B5; text-transform:uppercase; letter-spacing:.3px; }
+.contact-value { font-size:14px; font-weight:600; color:#1C2A3A; margin-top:2px; overflow-wrap:anywhere; }
+.contact-value a { color:#2E5C8A; }
+.contact-value a:hover { text-decoration:underline; }
+.contact-value.vide { color:#B4BFCB; font-weight:500; }
+.icon-btn { width:32px; height:32px; border-radius:9px; border:1.5px solid #E2E7EE; background:#fff; color:#7A8699; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; padding:0; }
+.icon-btn:hover { background:#F1F5FA; color:#2E5C8A; border-color:#CFDBE8; }
+.icon-btn.ok { color:#1F8E5F; border-color:#BFE3D1; background:#E2F3EB; }
+.icon-btn.danger:hover { color:#C2502E; border-color:#E8D6CE; background:#F8E8E2; }
+
+.note-box { background:#FFFBF1; border:1px solid #F3E6C4; border-radius:12px; padding:14px 16px; font-size:13.5px; line-height:1.6; color:#3B4657; white-space:pre-wrap; }
+
+.forfait-item { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid #F1F4F8; }
+.forfait-item:last-of-type { border-bottom:0; }
+.forfait-icon { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.forfait-nom { font-size:13.5px; font-weight:700; }
+.forfait-libelle { font-size:12.5px; color:#7A8699; margin-top:1px; overflow-wrap:anywhere; }
+.forfait-add { margin-top:14px; padding-top:14px; border-top:1px dashed #E2E7EE; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.forfait-add .select-field { margin-bottom:0; }
+.forfait-add .select-display { height:40px; padding-top:0; padding-bottom:0; }
+.forfait-add .select-field { flex:0 0 170px; }
+.forfait-add input { margin:0; height:40px; width:auto; flex:1 1 120px; min-width:0; padding-top:0; padding-bottom:0; }
+.mainwp-hint { font-size:12px; color:#9AA7B5; display:inline-flex; align-items:center; gap:5px; }
+
+@media (max-width: 900px) { .fiche-layout { grid-template-columns:1fr; } }
+@media (max-width: 640px) {
+  .client-hero-avatar { width:52px; height:52px; font-size:18px; border-radius:15px; }
+  .client-hero-main h2 { font-size:19px; }
+  .client-hero-actions { width:100%; }
+  .client-hero-actions .btn { flex:1 1 auto; }
+  .forfait-add .select-field { flex-basis:100%; }
+}
