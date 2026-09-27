@@ -44,6 +44,14 @@
           </div>
         <% } %>
       </div>
+      <% if (c.lienMainWP && c.mainwpConnecte !== false) { %>
+        <a href="<%= c.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline"
+          style="padding:6px 10px;font-size:12.5px;flex-shrink:0;white-space:nowrap;" onclick="event.stopPropagation()"
+          title="Connexion en 1 clic au wp-admin via MainWP">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          Connexion
+        </a>
+      <% } %>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" stroke-width="2" style="flex-shrink:0;"><path d="M9 6l6 6-6 6"></path></svg>
     </div>
   <% }); %>

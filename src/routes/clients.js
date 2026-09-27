@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware');
+const { enrichirMainWP } = require('../lib/mainwp');
 
 // CRM clients. Lecture ouverte à tout utilisateur connecté (les alternants
 // consultent) ; création / modification / suppression réservées à l'admin
@@ -43,7 +44,8 @@ router.get('/clients', async (req, res) => {
     .from('clients')
     .select('*, client_forfaits(id, type, libelle)')
     .order('societe', { ascending: true, nullsFirst: false });
-  const liste = (clients || []).map(c => Object.assign({}, c, { forfaits: trierForfaits(c.client_forfaits) }));
+  const liste = await Promise.all((clients || []).map(c =>
+    enrichirMainWP(Object.assign({}, c, { forfaits: trierForfaits(c.client_forfaits) }))));
   res.render('clients', {
     clients: liste,
     isAdmin: req.profile.role === 'admin',
@@ -59,6 +61,7 @@ router.get('/clients/:id', async (req, res) => {
     .eq('id', req.params.id).maybeSingle();
   if (!client) return res.redirect('/clients');
   client.forfaits = trierForfaits(client.client_forfaits);
+  await enrichirMainWP(client);
   // NB : la variable passée à la vue ne doit PAS s'appeler `client` — EJS traite
   // une clé `client` des données comme son option de compilation « client mode »
   // (via _OPTS_PASSABLE_WITH_DATA), ce qui casse `include()` (« include is not a

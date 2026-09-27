@@ -2,7 +2,8 @@
 
 <a href="/clients" class="btn btn-outline" style="margin-bottom:16px;">&larr; Retour aux clients</a>
 
-<% var lienSite = fiche.lien_connexion || fiche.site_web; %>
+<% var boutonMainWP = fiche.lienMainWP && fiche.mainwpConnecte !== false; %>
+<% var lienSite = boutonMainWP ? fiche.site_web : (fiche.lien_connexion || fiche.site_web); %>
 
 <div class="card">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
@@ -11,11 +12,21 @@
       <% if (fiche.societe && fiche.client) { %><div style="font-size:13px;color:#9AA7B5;margin-top:3px;"><%= fiche.client %></div><% } %>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <% if (lienSite) { %>
-        <a href="<%= lienSite %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
-          Se connecter au site
+      <% if (fiche.lienMainWP && fiche.mainwpConnecte !== false) { %>
+        <a href="<%= fiche.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary"
+          title="Ouvre le wp-admin du site via MainWP (session MainWP requise)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          Connexion en 1 clic
         </a>
+      <% } %>
+      <% if (lienSite) { %>
+        <a href="<%= lienSite %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+          <%= boutonMainWP ? 'Ouvrir le site' : 'Se connecter au site' %>
+        </a>
+      <% } %>
+      <% if (fiche.lienMainWP && fiche.mainwpConnecte === false) { %>
+        <span class="muted" style="font-size:12.5px;align-self:center;" title="Ce domaine n'est pas géré par le tableau de bord MainWP (site non WordPress ou plugin MainWP Child absent).">Pas connecté à MainWP</span>
       <% } %>
       <% if (isAdmin) { %>
         <button type="button" class="btn btn-outline" onclick="ouvrirModalModifierClient()">Modifier</button>
