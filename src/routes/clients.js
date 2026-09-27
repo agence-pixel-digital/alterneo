@@ -59,8 +59,12 @@ router.get('/clients/:id', async (req, res) => {
     .eq('id', req.params.id).maybeSingle();
   if (!client) return res.redirect('/clients');
   client.forfaits = trierForfaits(client.client_forfaits);
+  // NB : la variable passée à la vue ne doit PAS s'appeler `client` — EJS traite
+  // une clé `client` des données comme son option de compilation « client mode »
+  // (via _OPTS_PASSABLE_WITH_DATA), ce qui casse `include()` (« include is not a
+  // function »). On la nomme donc `fiche`.
   res.render('client-fiche', {
-    client,
+    fiche: client,
     isAdmin: req.profile.role === 'admin',
     FORFAITS, FORFAIT_LABEL
   });

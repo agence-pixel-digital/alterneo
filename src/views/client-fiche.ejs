@@ -1,14 +1,14 @@
-<%- include('partials/header', { title: client.societe || client.client || 'Fiche client', active: 'clients' }) %>
+<%- include('partials/header', { title: fiche.societe || fiche.client || 'Fiche client', active: 'clients' }) %>
 
 <a href="/clients" class="btn btn-outline" style="margin-bottom:16px;">&larr; Retour aux clients</a>
 
-<% var lienSite = client.lien_connexion || client.site_web; %>
+<% var lienSite = fiche.lien_connexion || fiche.site_web; %>
 
 <div class="card">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
     <div>
-      <h3 style="margin:0;"><%= client.societe || client.client || 'Client sans nom' %></h3>
-      <% if (client.societe && client.client) { %><div style="font-size:13px;color:#9AA7B5;margin-top:3px;"><%= client.client %></div><% } %>
+      <h3 style="margin:0;"><%= fiche.societe || fiche.client || 'Client sans nom' %></h3>
+      <% if (fiche.societe && fiche.client) { %><div style="font-size:13px;color:#9AA7B5;margin-top:3px;"><%= fiche.client %></div><% } %>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <% if (lienSite) { %>
@@ -25,49 +25,49 @@
 
   <div class="fiche-grid">
     <div><span class="fiche-label">Site web</span>
-      <% if (client.site_web) { %><a href="<%= client.site_web %>" target="_blank" rel="noopener noreferrer"><%= client.site_web %></a><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.site_web) { %><a href="<%= fiche.site_web %>" target="_blank" rel="noopener noreferrer"><%= fiche.site_web %></a><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div><span class="fiche-label">Société</span>
-      <% if (client.societe) { %><%= client.societe %><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.societe) { %><%= fiche.societe %><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div><span class="fiche-label">Client</span>
-      <% if (client.client) { %><%= client.client %><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.client) { %><%= fiche.client %><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div><span class="fiche-label">Téléphone</span>
-      <% if (client.telephone) { %><a href="tel:<%= client.telephone.replace(/\s/g,'') %>"><%= client.telephone %></a><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.telephone) { %><a href="tel:<%= fiche.telephone.replace(/\s/g,'') %>"><%= fiche.telephone %></a><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div><span class="fiche-label">E-mail</span>
-      <% if (client.email) { %><a href="mailto:<%= client.email %>"><%= client.email %></a><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.email) { %><a href="mailto:<%= fiche.email %>"><%= fiche.email %></a><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div><span class="fiche-label">Siret</span>
-      <% if (client.siret) { %><%= client.siret %><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.siret) { %><%= fiche.siret %><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
     <div style="grid-column:1/-1;"><span class="fiche-label">Adresse</span>
-      <% if (client.adresse) { %><%= client.adresse %><% } else { %><span class="muted">&mdash;</span><% } %>
+      <% if (fiche.adresse) { %><%= fiche.adresse %><% } else { %><span class="muted">&mdash;</span><% } %>
     </div>
   </div>
 
-  <% if (client.note) { %>
+  <% if (fiche.note) { %>
     <div style="margin-top:16px;">
       <span class="fiche-label">Note</span>
-      <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55;"><%= client.note %></div>
+      <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55;"><%= fiche.note %></div>
     </div>
   <% } %>
 </div>
 
 <div class="card">
-  <h3 style="margin:0 0 14px;">Forfaits &amp; services (<%= client.forfaits.length %>)</h3>
+  <h3 style="margin:0 0 14px;">Forfaits &amp; services (<%= fiche.forfaits.length %>)</h3>
 
-  <% if (client.forfaits.length === 0) { %>
-    <div class="empty-state" style="padding:18px;">Aucun forfait pour ce client.</div>
+  <% if (fiche.forfaits.length === 0) { %>
+    <div class="empty-state" style="padding:18px;">Aucun forfait pour ce client pour l'instant.</div>
   <% } %>
 
-  <% client.forfaits.forEach(function(f) { %>
+  <% fiche.forfaits.forEach(function(f) { %>
     <div class="list-row" style="align-items:center;gap:12px;">
       <span class="badge forfait-<%= f.type %>"><%= FORFAIT_LABEL[f.type] %></span>
       <div style="flex:1;font-size:13.5px;"><%= f.libelle || '' %></div>
       <% if (isAdmin) { %>
-        <form method="POST" action="/clients/<%= client.id %>/forfaits/<%= f.id %>/supprimer" style="margin:0;"
+        <form method="POST" action="/clients/<%= fiche.id %>/forfaits/<%= f.id %>/supprimer" style="margin:0;"
           onsubmit="return confirm('Retirer ce forfait ?');">
           <button type="submit" class="btn btn-outline" style="padding:6px 12px;">Retirer</button>
         </form>
@@ -76,7 +76,7 @@
   <% }); %>
 
   <% if (isAdmin) { %>
-    <form method="POST" action="/clients/<%= client.id %>/forfaits"
+    <form method="POST" action="/clients/<%= fiche.id %>/forfaits"
       style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #F1F4F8;">
       <div style="width:200px;">
         <label style="margin-top:0;">Forfait</label>
@@ -105,7 +105,7 @@
 
 <% if (isAdmin) { %>
 <div style="margin-top:4px;">
-  <form method="POST" action="/clients/<%= client.id %>/supprimer"
+  <form method="POST" action="/clients/<%= fiche.id %>/supprimer"
     onsubmit="return confirm('Supprimer définitivement ce client et tous ses forfaits ?');">
     <button type="submit" class="btn" style="background:#C2502E;color:#fff;">Supprimer ce client</button>
   </form>
@@ -117,25 +117,25 @@
       <h3 style="margin:0;">Modifier le client</h3>
       <button type="button" class="modal-close" onclick="document.getElementById('modal-client').style.display='none'">&times;</button>
     </div>
-    <form method="POST" action="/clients/<%= client.id %>">
+    <form method="POST" action="/clients/<%= fiche.id %>">
       <label>Société</label>
-      <input name="societe" value="<%= client.societe || '' %>">
+      <input name="societe" value="<%= fiche.societe || '' %>">
       <label>Client (contact)</label>
-      <input name="client" value="<%= client.client || '' %>">
+      <input name="client" value="<%= fiche.client || '' %>">
       <label>Site web</label>
-      <input name="site_web" value="<%= client.site_web || '' %>" placeholder="https://...">
+      <input name="site_web" value="<%= fiche.site_web || '' %>" placeholder="https://...">
       <label>Téléphone</label>
-      <input name="telephone" value="<%= client.telephone || '' %>">
+      <input name="telephone" value="<%= fiche.telephone || '' %>">
       <label>E-mail</label>
-      <input type="email" name="email" value="<%= client.email || '' %>">
+      <input type="email" name="email" value="<%= fiche.email || '' %>">
       <label>Siret</label>
-      <input name="siret" value="<%= client.siret || '' %>">
+      <input name="siret" value="<%= fiche.siret || '' %>">
       <label>Adresse</label>
-      <input name="adresse" value="<%= client.adresse || '' %>">
+      <input name="adresse" value="<%= fiche.adresse || '' %>">
       <label>Lien de connexion au site (admin)</label>
-      <input name="lien_connexion" value="<%= client.lien_connexion || '' %>" placeholder="https://.../wp-admin">
+      <input name="lien_connexion" value="<%= fiche.lien_connexion || '' %>" placeholder="https://.../wp-admin">
       <label>Note</label>
-      <textarea name="note" rows="3"><%= client.note || '' %></textarea>
+      <textarea name="note" rows="3"><%= fiche.note || '' %></textarea>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;">Enregistrer</button>
     </form>
   </div>
