@@ -1,0 +1,135 @@
+<%- include('partials/header', { title: client.societe || client.client || 'Fiche client', active: 'clients' }) %>
+
+<a href="/clients" class="btn btn-outline" style="margin-bottom:16px;">← Retour aux clients</a>
+
+<%
+  var lienSite = client.lien_connexion || client.site_web;
+  function val(v) { return v ? v : '<span class="muted">—</span>'; }
+%>
+
+<div class="card">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
+    <div>
+      <h3 style="margin:0;"><%= client.societe || client.client || 'Client sans nom' %></h3>
+      <% if (client.societe && client.client) { %><div style="font-size:13px;color:#9AA7B5;margin-top:3px;"><%= client.client %></div><% } %>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <% if (lienSite) { %>
+        <a href="<%= lienSite %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+          Se connecter au site
+        </a>
+      <% } %>
+      <% if (isAdmin) { %>
+        <button type="button" class="btn btn-outline" onclick="ouvrirModalModifierClient()">Modifier</button>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="fiche-grid">
+    <div><span class="fiche-label">Site web</span>
+      <% if (client.site_web) { %><a href="<%= client.site_web %>" target="_blank" rel="noopener noreferrer"><%= client.site_web %></a><% } else { %><span class="muted">—</span><% } %>
+    </div>
+    <div><span class="fiche-label">Société</span><%- val(client.societe) %></div>
+    <div><span class="fiche-label">Client</span><%- val(client.client) %></div>
+    <div><span class="fiche-label">Téléphone</span>
+      <% if (client.telephone) { %><a href="tel:<%= client.telephone.replace(/\s/g,'') %>"><%= client.telephone %></a><% } else { %><span class="muted">—</span><% } %>
+    </div>
+    <div><span class="fiche-label">E-mail</span>
+      <% if (client.email) { %><a href="mailto:<%= client.email %>"><%= client.email %></a><% } else { %><span class="muted">—</span><% } %>
+    </div>
+    <div><span class="fiche-label">Siret</span><%- val(client.siret) %></div>
+    <div style="grid-column:1/-1;"><span class="fiche-label">Adresse</span><%- val(client.adresse) %></div>
+  </div>
+
+  <% if (client.note) { %>
+    <div style="margin-top:16px;">
+      <span class="fiche-label">Note</span>
+      <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55;"><%= client.note %></div>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 14px;">Forfaits &amp; services (<%= client.forfaits.length %>)</h3>
+
+  <% if (client.forfaits.length === 0) { %>
+    <div class="empty-state" style="padding:18px;">Aucun forfait pour ce client.</div>
+  <% } %>
+
+  <% client.forfaits.forEach(function(f) { %>
+    <div class="list-row" style="align-items:center;gap:12px;">
+      <span class="badge forfait-<%= f.type %>"><%= FORFAIT_LABEL[f.type] %></span>
+      <div style="flex:1;font-size:13.5px;"><%= f.libelle || '' %></div>
+      <% if (isAdmin) { %>
+        <form method="POST" action="/clients/<%= client.id %>/forfaits/<%= f.id %>/supprimer" style="margin:0;"
+          onsubmit="return confirm('Retirer ce forfait ?');">
+          <button type="submit" class="btn btn-outline" style="padding:6px 12px;">Retirer</button>
+        </form>
+      <% } %>
+    </div>
+  <% }); %>
+
+  <% if (isAdmin) { %>
+    <form method="POST" action="/clients/<%= client.id %>/forfaits"
+      style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #F1F4F8;">
+      <div style="width:200px;">
+        <label style="margin-top:0;">Forfait</label>
+        <%- include('partials/select-field', { name: 'type', id: 'forfait-type', value: 'hebergement',
+          options: FORFAITS.map(v => ({ value: v, label: FORFAIT_LABEL[v] })) }) %>
+      </div>
+      <div style="flex:1;min-width:180px;">
+        <label style="margin-top:0;">Libellé (optionnel)</label>
+        <input name="libelle" placeholder="ex. monsite.fr" style="margin-bottom:0;">
+      </div>
+      <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+  <% } %>
+</div>
+
+<% if (isAdmin) { %>
+<div style="margin-top:4px;">
+  <form method="POST" action="/clients/<%= client.id %>/supprimer"
+    onsubmit="return confirm('Supprimer définitivement ce client et tous ses forfaits ?');">
+    <button type="submit" class="btn" style="background:#C2502E;color:#fff;">Supprimer ce client</button>
+  </form>
+</div>
+
+<div id="modal-client" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 style="margin:0;">Modifier le client</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-client').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/clients/<%= client.id %>">
+      <label>Société</label>
+      <input name="societe" value="<%= client.societe || '' %>">
+      <label>Client (contact)</label>
+      <input name="client" value="<%= client.client || '' %>">
+      <label>Site web</label>
+      <input name="site_web" value="<%= client.site_web || '' %>" placeholder="https://…">
+      <label>Téléphone</label>
+      <input name="telephone" value="<%= client.telephone || '' %>">
+      <label>E-mail</label>
+      <input type="email" name="email" value="<%= client.email || '' %>">
+      <label>Siret</label>
+      <input name="siret" value="<%= client.siret || '' %>">
+      <label>Adresse</label>
+      <input name="adresse" value="<%= client.adresse || '' %>">
+      <label>Lien de connexion au site (admin)</label>
+      <input name="lien_connexion" value="<%= client.lien_connexion || '' %>" placeholder="https://…/wp-admin">
+      <label>Note</label>
+      <textarea name="note" rows="3"><%= client.note || '' %></textarea>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;">Enregistrer</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  window.ouvrirModalModifierClient = function () {
+    document.getElementById('modal-client').style.display = 'flex';
+  };
+</script>
+<% } %>
+
+<%- include('partials/footer') %>
