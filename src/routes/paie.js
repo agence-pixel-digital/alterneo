@@ -50,13 +50,17 @@ router.post('/paie', requireAdmin, upload.single('fichier'), async (req, res) =>
   const { data: existing } = await req.db.from('fiches_paie').select('id').eq('alternant_id', alternant_id).eq('periode', periode).maybeSingle();
   if (existing) return rerender('Une fiche existe déjà pour cette période.');
 
+  // Aucune fiche en base pour cette période (vérifié ci-dessus) : un PDF déjà présent
+  // dans le Storage à ce chemin est orphelin (ligne supprimée en base sans son fichier).
+  // On l'écrase, sinon l'upload échoue avec « The resource already exists ».
   const path = `${alternant_id}/${periode}.pdf`;
   const { error: uploadErr } = await supabaseAdmin.storage.from('fiches-paie').upload(path, req.file.buffer, {
-    contentType: 'application/pdf', upsert: false
+    contentType: 'application/pdf', upsert: true
   });
   if (uploadErr) return rerender("Erreur lors de l'envoi du fichier : " + uploadErr.message);
 
-  await req.db.from('fiches_paie').insert({ alternant_id, periode, fichier_url: path });
+  const { error: insertErr } = await req.db.from('fiches_paie').insert({ alternant_id, periode, fichier_url: path });
+  if (insertErr) return rerender("Erreur lors de l'enregistrement de la fiche : " + insertErr.message);
   const { data: alternant } = await req.db.from('profiles').select('prenom,email').eq('id', alternant_id).single();
   if (alternant) notifierNouvelleFichePaie(alternant, periode);
   res.redirect('/paie');
