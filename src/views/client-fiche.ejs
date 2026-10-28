@@ -1,44 +1,17 @@
 <%- include('partials/header', { title: fiche.societe || fiche.client || 'Fiche client', active: 'clients' }) %>
 
 <%
-  // Icônes (tracés statiques, style Lucide), rendues non échappées via ico('nom').
-  var P = {
-    globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
-    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
-    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
-    building: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
-    pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
-    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
-    external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
-    zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
-    pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
-    trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
-    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-    note: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
-    server: '<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/>',
-    wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
-    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
-    box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'
-  };
-  var ico = function (nom, taille) {
-    taille = taille || 18;
-    return '<svg width="' + taille + '" height="' + taille + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + P[nom] + '</svg>';
-  };
-  var FORFAIT_ICO = { hebergement: ['server', 'ci-blue'], nom_de_domaine: ['globe', 'ci-purple'], maintenance_classique: ['wrench', 'ci-green'], maintenance_premium: ['shield', 'ci-orange'], autre: ['box', 'ci-grey'] };
-
-  // Liens sûrs : on force http(s) (évite un « javascript: » saisi dans la fiche).
-  var urlSure = function (u) { if (!u) return null; return /^https?:\/\//i.test(u) ? u : 'https://' + u; };
-  var siteAffiche = fiche.site_web ? fiche.site_web.replace(/^https?:\/\//i, '').replace(/\/+$/, '') : '';
-
+  var fmt = K.formatEuro;
   var nom = fiche.societe || fiche.client || 'Client sans nom';
   var initiales = nom.split(/[\s'-]+/).filter(Boolean).slice(0, 2).map(function (m) { return m[0]; }).join('').toUpperCase();
   var COULEURS = ['#2E5C8A', '#7A53C1', '#1F8E5F', '#C2502E', '#B7791F', '#2A7F9E', '#8A4F7D'];
   var h = 0; for (var i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) >>> 0;
   var couleur = COULEURS[h % COULEURS.length];
-
-  var boutonMainWP = fiche.lienMainWP && fiche.mainwpConnecte !== false;
-  var lienSite = urlSure(boutonMainWP ? fiche.site_web : (fiche.lien_connexion || fiche.site_web));
+  var abos = fiche.abonnements;
+  var totaux = fiche.totaux;
+  var sitePrincipal = fiche.sites[0] || null;
+  // Sérialisation sûre pour les attributs data-* (le modal de modification relit ces valeurs).
+  var attr = function (v) { return v === null || v === undefined ? '' : String(v); };
 %>
 
 <a href="/clients" class="back-link">&larr; Retour aux clients</a>
@@ -47,29 +20,38 @@
   <div class="client-hero">
     <div class="client-hero-avatar" style="background:<%= couleur %>;"><%= initiales %></div>
     <div class="client-hero-main">
-      <h2><%= nom %></h2>
-      <div class="client-hero-sub">
-        <% if (fiche.societe && fiche.client) { %><span><%- ico('user', 15) %><%= fiche.client %></span><% } %>
-        <% if (fiche.site_web) { %><a href="<%= urlSure(fiche.site_web) %>" target="_blank" rel="noopener noreferrer"><%- ico('globe', 15) %><%= siteAffiche %></a><% } %>
+      <div class="client-hero-top">
+        <% if (fiche.numero) { %><span class="num-pill big">N° <%= fiche.numero %></span><% } %>
+        <h2><%= nom %></h2>
+        <% if (fiche.type_structure) { %><span class="badge badge-structure"><%= fiche.type_structure %></span><% } %>
       </div>
-      <% if (fiche.forfaits.length) { %>
+      <div class="client-hero-sub">
+        <% if (fiche.societe && fiche.client && fiche.client !== fiche.societe) { %><span><%- ico('user', 15) %><%= fiche.client %></span><% } %>
+        <% if (sitePrincipal) { %><a href="<%= K.urlSure(sitePrincipal) %>" target="_blank" rel="noopener noreferrer"><%- ico('globe', 15) %><%= sitePrincipal %><% if (fiche.sites.length > 1) { %> <span class="muted">+<%= fiche.sites.length - 1 %></span><% } %></a><% } %>
+        <% if (fiche.stripe_customer_id) { %>
+          <span class="stripe-pill on" title="<%= fiche.stripe_customer_id %>"><%- ico('card', 12) %>Client Stripe</span>
+        <% } else { %>
+          <span class="stripe-pill off">Hors Stripe</span>
+        <% } %>
+      </div>
+      <% if (fiche.categories.length) { %>
         <div class="client-hero-badges">
-          <% fiche.forfaits.forEach(function (f) { %>
-            <span class="badge forfait-<%= f.type %>"><%= FORFAIT_LABEL[f.type] %></span>
+          <% fiche.categories.forEach(function (k) { %>
+            <span class="badge cat-<%= k %>"><%= K.CATEGORIE_LABEL[k] %></span>
           <% }); %>
         </div>
       <% } %>
     </div>
     <div class="client-hero-actions">
-      <% if (boutonMainWP) { %>
+      <% if (fiche.lienStripe) { %>
+        <a href="<%= fiche.lienStripe %>" target="_blank" rel="noopener noreferrer" class="btn btn-stripe" title="Ouvrir la fiche client dans le dashboard Stripe">
+          <span style="margin-right:6px;display:inline-flex;"><%- ico('card', 15) %></span>Fiche Stripe
+        </a>
+      <% } %>
+      <% if (fiche.lienMainWP) { %>
         <a href="<%= fiche.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary"
           title="Ouvre le wp-admin du site via MainWP (session MainWP requise)">
           <span style="margin-right:6px;display:inline-flex;"><%- ico('zap', 15) %></span>Connexion en 1 clic
-        </a>
-      <% } %>
-      <% if (lienSite) { %>
-        <a href="<%= lienSite %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
-          <span style="margin-right:6px;display:inline-flex;"><%- ico('external', 15) %></span><%= boutonMainWP ? 'Ouvrir le site' : 'Se connecter au site' %>
         </a>
       <% } %>
       <% if (isAdmin) { %>
@@ -79,30 +61,31 @@
       <% } %>
     </div>
   </div>
-  <% if (fiche.lienMainWP && fiche.mainwpConnecte === false) { %>
-    <div class="mainwp-hint" style="margin-top:12px;" title="Ce domaine n'est pas géré par le tableau de bord MainWP (site non WordPress ou plugin MainWP Child absent).">
-      <%- ico('zap', 13) %>Pas connecté à MainWP
+
+  <div class="client-hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-label">Abonnements</div>
+      <div class="hero-stat-value"><%= abos.length %></div>
     </div>
-  <% } %>
+    <div class="hero-stat">
+      <div class="hero-stat-label">Sites / domaines</div>
+      <div class="hero-stat-value"><%= fiche.sites.length %></div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-label">Mensuel</div>
+      <div class="hero-stat-value" style="color:#1F8E5F;"><%= totaux.nbMensuel ? fmt(totaux.mensuel) : '—' %><% if (totaux.nbMensuel) { %><span class="hero-stat-unit">/mois</span><% } %></div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-label">Annuel</div>
+      <div class="hero-stat-value" style="color:#B7791F;"><%= totaux.nbAnnuel ? fmt(totaux.annuel) : '—' %><% if (totaux.nbAnnuel) { %><span class="hero-stat-unit">/an</span><% } %></div>
+    </div>
+  </div>
 </div>
 
 <div class="fiche-layout">
   <div>
     <div class="card">
       <div class="card-title">Coordonnées</div>
-
-      <div class="contact-row">
-        <div class="contact-icon ci-blue"><%- ico('globe') %></div>
-        <div class="contact-body">
-          <div class="contact-label">Site web</div>
-          <% if (fiche.site_web) { %>
-            <div class="contact-value"><a href="<%= urlSure(fiche.site_web) %>" target="_blank" rel="noopener noreferrer"><%= siteAffiche %></a></div>
-          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
-        </div>
-        <% if (fiche.site_web) { %>
-          <a class="icon-btn" href="<%= urlSure(fiche.site_web) %>" target="_blank" rel="noopener noreferrer" title="Ouvrir le site"><%- ico('external', 15) %></a>
-        <% } %>
-      </div>
 
       <div class="contact-row">
         <div class="contact-icon ci-purple"><%- ico('user') %></div>
@@ -131,7 +114,7 @@
         <div class="contact-body">
           <div class="contact-label">E-mail</div>
           <% if (fiche.email) { %>
-            <div class="contact-value"><a href="mailto:<%= fiche.email %>"><%= fiche.email %></a></div>
+            <div class="contact-value"><a href="mailto:<%= fiche.email.split(/[,\/\s]+/)[0] %>"><%= fiche.email %></a></div>
           <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
         </div>
         <% if (fiche.email) { %>
@@ -152,14 +135,36 @@
       </div>
 
       <div class="contact-row">
+        <div class="contact-icon ci-teal"><%- ico('briefcase') %></div>
+        <div class="contact-body">
+          <div class="contact-label">Type de structure</div>
+          <% if (fiche.type_structure) { %><div class="contact-value"><%= fiche.type_structure %></div>
+          <% } else { %><div class="contact-value vide">Non renseigné</div><% } %>
+        </div>
+      </div>
+
+      <div class="contact-row">
         <div class="contact-icon ci-red"><%- ico('pin') %></div>
         <div class="contact-body">
-          <div class="contact-label">Adresse</div>
+          <div class="contact-label">Adresse complète</div>
           <% if (fiche.adresse) { %><div class="contact-value"><%= fiche.adresse %></div>
           <% } else { %><div class="contact-value vide">Non renseignée</div><% } %>
         </div>
         <% if (fiche.adresse) { %>
           <a class="icon-btn" href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(fiche.adresse) %>" target="_blank" rel="noopener noreferrer" title="Voir sur Google Maps"><%- ico('external', 15) %></a>
+        <% } %>
+      </div>
+
+      <div class="contact-row">
+        <div class="contact-icon ci-indigo"><%- ico('card') %></div>
+        <div class="contact-body">
+          <div class="contact-label">ID client Stripe</div>
+          <% if (fiche.stripe_customer_id) { %><div class="contact-value"><code class="mono"><%= fiche.stripe_customer_id %></code></div>
+          <% } else { %><div class="contact-value vide">Pas de client Stripe</div><% } %>
+        </div>
+        <% if (fiche.stripe_customer_id) { %>
+          <button type="button" class="icon-btn js-copy" data-copy="<%= fiche.stripe_customer_id %>" title="Copier l'ID Stripe"><%- ico('copy', 15) %></button>
+          <a class="icon-btn" href="<%= fiche.lienStripe %>" target="_blank" rel="noopener noreferrer" title="Ouvrir dans Stripe"><%- ico('external', 15) %></a>
         <% } %>
       </div>
     </div>
@@ -173,71 +178,147 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Forfaits &amp; services <span class="count"><%= fiche.forfaits.length %></span></div>
+    <div class="card-title">
+      <span>Abonnements &amp; services <span class="count"><%= abos.length %></span></span>
+      <% if (isAdmin) { %>
+        <button type="button" class="btn btn-outline btn-sm" onclick="ouvrirModalAbonnement(null)">
+          <span style="margin-right:4px;display:inline-flex;"><%- ico('plus', 13) %></span>Ajouter
+        </button>
+      <% } %>
+    </div>
 
-    <% if (fiche.forfaits.length === 0) { %>
-      <div class="empty-state" style="padding:22px 10px;">Aucun forfait pour ce client pour l'instant.</div>
+    <% if (abos.length === 0) { %>
+      <div class="empty-state" style="padding:22px 10px;">Aucun abonnement pour ce client pour l'instant.</div>
     <% } %>
 
-    <% fiche.forfaits.forEach(function (f) { var fi = FORFAIT_ICO[f.type] || FORFAIT_ICO.autre; %>
-      <div class="forfait-item">
-        <div class="forfait-icon <%= fi[1] %>"><%- ico(fi[0]) %></div>
-        <div style="flex:1;min-width:0;">
-          <div class="forfait-nom"><%= FORFAIT_LABEL[f.type] %></div>
-          <% if (f.libelle) { %><div class="forfait-libelle"><%= f.libelle %></div><% } %>
+    <% abos.forEach(function (a) { var ci = CATEGORIE_ICO[a.categorie] || CATEGORIE_ICO.autre; var titre = a.produit || a.description || K.CATEGORIE_LABEL[a.categorie]; %>
+      <div class="abo-card" id="abo-<%= a.id %>">
+        <div class="abo-head">
+          <div class="forfait-icon <%= ci[1] %>"><%- ico(ci[0]) %></div>
+          <div style="flex:1;min-width:0;">
+            <div class="abo-title"><%= titre %></div>
+            <% if (a.description && a.description !== titre) { %><div class="abo-desc"><%= a.description %></div><% } %>
+            <div style="margin-top:6px;"><span class="badge cat-<%= a.categorie %>"><%= K.CATEGORIE_LABEL[a.categorie] %></span></div>
+          </div>
+          <div class="abo-price">
+            <% if (a.montant !== null) { %>
+              <%= fmt(a.montant) %><% if (a.periodicite) { %><span class="abo-price-unit">/<%= K.PERIODICITE_COURT[a.periodicite] %></span><% } %>
+              <% if (K.nombre(a.quantite) > 1) { %><small><%= K.nombre(a.quantite) %> × <%= fmt(a.prix_unitaire) %></small><% } %>
+            <% } else { %>
+              <span class="muted" style="font-weight:600;"><%= a.moyen_paiement === 'Offert' ? 'Offert' : (a.moyen_paiement === 'Pixel Digital' ? 'Interne' : 'Sans prix') %></span>
+            <% } %>
+          </div>
         </div>
-        <% if (isAdmin) { %>
-          <form method="POST" action="/clients/<%= fiche.id %>/forfaits/<%= f.id %>/supprimer" style="margin:0;"
-            onsubmit="return confirm('Retirer ce forfait ?');">
-            <button type="submit" class="icon-btn danger" title="Retirer ce forfait"><%- ico('x', 15) %></button>
-          </form>
+
+        <div class="abo-meta">
+          <% a.domaines.forEach(function (d) { %>
+            <span class="meta-chip"><%- ico('globe', 12) %><a href="<%= K.urlSure(d) %>" target="_blank" rel="noopener noreferrer"><%= d %></a></span>
+          <% }); %>
+          <% if (a.type_site) { %><span class="meta-chip" title="Type de site"><%- ico('layout', 12) %><%= a.type_site %></span><% } %>
+          <% if (a.hostinger) { %><span class="meta-chip" title="Chez Hostinger"><%- ico('server', 12) %>Hostinger : <%= a.hostinger %></span><% } %>
+          <% if (a.periodicite) { %><span class="meta-chip" title="Périodicité"><%- ico('repeat', 12) %><%= K.PERIODICITE_LABEL[a.periodicite] %></span><% } %>
+          <% if (a.moyen_paiement) { %><span class="meta-chip" title="Moyen de paiement"><%- ico('card', 12) %><%= a.moyen_paiement %></span><% } %>
+          <% if (K.nombre(a.quantite) !== null) { %><span class="meta-chip" title="Quantité"><%- ico('hash', 12) %>Qté <%= K.nombre(a.quantite) %></span><% } %>
+        </div>
+
+        <% if (a.identifiant || a.mot_de_passe || a.liens.length) { %>
+          <div class="abo-access">
+            <% if (a.liens.length) { a.liens.forEach(function (l) { %>
+              <a class="access-item" href="<%= l %>" target="_blank" rel="noopener noreferrer" title="Page de connexion"><%- ico('external', 13) %><%= l.replace(/^https?:\/\//i, '') %></a>
+            <% }); } %>
+            <% if (a.identifiant) { %>
+              <span class="access-item" title="Identifiant"><%- ico('user', 13) %><code class="mono"><%= a.identifiant %></code>
+                <button type="button" class="icon-btn sm js-copy" data-copy="<%= a.identifiant %>" title="Copier l'identifiant"><%- ico('copy', 12) %></button></span>
+            <% } %>
+            <% if (a.mot_de_passe) { %>
+              <span class="access-item" title="Mot de passe"><%- ico('key', 13) %><code class="mono js-pwd-value" data-pwd="<%= a.mot_de_passe %>">••••••••••</code>
+                <button type="button" class="icon-btn sm js-pwd-toggle" title="Afficher / masquer"><%- ico('eye', 12) %></button>
+                <button type="button" class="icon-btn sm js-copy" data-copy="<%= a.mot_de_passe %>" title="Copier le mot de passe"><%- ico('copy', 12) %></button></span>
+            <% } %>
+          </div>
         <% } %>
+
+        <div class="abo-actions">
+          <% if (a.lienMainWP && a.mainwpConnecte !== false) { %>
+            <a href="<%= a.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" title="Connexion en 1 clic au wp-admin via MainWP">
+              <span style="margin-right:4px;display:inline-flex;"><%- ico('zap', 12) %></span>Connexion 1 clic
+            </a>
+          <% } else if (a.lienMainWP) { %>
+            <span class="mainwp-hint" title="Ce domaine n'est pas géré par MainWP (plugin MainWP Child absent)."><%- ico('zap', 12) %>Pas connecté à MainWP</span>
+          <% } %>
+          <% if (a.lienStripe) { %>
+            <a href="<%= a.lienStripe %>" target="_blank" rel="noopener noreferrer" class="btn btn-stripe btn-xs" title="<%= a.stripe_subscription_id %>">
+              <span style="margin-right:4px;display:inline-flex;"><%- ico('card', 12) %></span><%= /^sub_sched_/.test(a.stripe_subscription_id) ? 'Planification Stripe' : 'Abonnement Stripe' %>
+            </a>
+          <% } else if (a.moyen_paiement && a.moyen_paiement !== 'Prélèvement' && a.moyen_paiement !== 'CB') { %>
+            <span class="muted" style="font-size:12px;">Hors Stripe · <%= a.moyen_paiement %></span>
+          <% } %>
+          <span class="spacer"></span>
+          <% if (isAdmin) { %>
+            <button type="button" class="icon-btn sm" title="Modifier cet abonnement" onclick="ouvrirModalAbonnement(this)"
+              data-id="<%= a.id %>" data-produit="<%= attr(a.produit) %>" data-description="<%= attr(a.description) %>" data-categorie="<%= a.categorie %>"
+              data-domaine="<%= attr(a.domaine) %>" data-type-site="<%= attr(a.type_site) %>" data-hostinger="<%= attr(a.hostinger) %>"
+              data-prix="<%= attr(a.prix_unitaire) %>" data-quantite="<%= attr(a.quantite) %>" data-periodicite="<%= attr(a.periodicite) %>"
+              data-moyen="<%= attr(a.moyen_paiement) %>" data-stripe="<%= attr(a.stripe_subscription_id) %>" data-lien="<%= attr(a.lien_connexion) %>"
+              data-identifiant="<%= attr(a.identifiant) %>" data-mdp="<%= attr(a.mot_de_passe) %>"><%- ico('pencil', 13) %></button>
+            <form method="POST" action="/clients/<%= fiche.id %>/abonnements/<%= a.id %>/supprimer" style="margin:0;"
+              onsubmit="return confirm('Retirer cet abonnement / service ?');">
+              <button type="submit" class="icon-btn sm danger" title="Retirer cet abonnement"><%- ico('x', 13) %></button>
+            </form>
+          <% } %>
+        </div>
       </div>
     <% }); %>
-
-    <% if (isAdmin) { %>
-      <form method="POST" action="/clients/<%= fiche.id %>/forfaits" class="forfait-add">
-        <%- include('partials/select-field', {
-          name: 'type', id: 'forfait-type', value: 'hebergement',
-          options: FORFAITS.map(function (v) { return { value: v, label: FORFAIT_LABEL[v] }; })
-        }) %>
-        <input name="libelle" placeholder="Libellé (ex. monsite.fr)">
-        <button type="submit" class="btn btn-primary">Ajouter</button>
-      </form>
-    <% } %>
   </div>
 </div>
 
 <% if (isAdmin) { %>
 <div id="modal-client" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
+  <div class="modal-box wide">
     <div class="modal-box-header">
       <h3 style="margin:0;">Modifier le client</h3>
       <button type="button" class="modal-close" onclick="document.getElementById('modal-client').style.display='none'">&times;</button>
     </div>
     <form method="POST" action="/clients/<%= fiche.id %>">
+      <div class="form-grid-2">
+        <div>
+          <label>Numéro client</label>
+          <input name="numero" value="<%= fiche.numero || '' %>" inputmode="numeric">
+        </div>
+        <div>
+          <label>Type de structure</label>
+          <%- include('partials/select-field', {
+            name: 'type_structure', id: 'client-structure', value: fiche.type_structure || '', placeholder: 'Non renseigné',
+            options: [{ value: '', label: 'Non renseigné' }].concat((K.TYPES_STRUCTURE.indexOf(fiche.type_structure) === -1 && fiche.type_structure ? [fiche.type_structure] : []).concat(K.TYPES_STRUCTURE).map(function (v) { return { value: v, label: v }; }))
+          }) %>
+        </div>
+      </div>
       <label>Société</label>
       <input name="societe" value="<%= fiche.societe || '' %>">
       <label>Client (contact)</label>
       <input name="client" value="<%= fiche.client || '' %>">
-      <label>Site web</label>
-      <input name="site_web" value="<%= fiche.site_web || '' %>" placeholder="https://...">
-      <label>Téléphone</label>
-      <input name="telephone" value="<%= fiche.telephone || '' %>">
-      <label>E-mail</label>
-      <input type="email" name="email" value="<%= fiche.email || '' %>">
+      <div class="form-grid-2">
+        <div>
+          <label>Téléphone</label>
+          <input name="telephone" value="<%= fiche.telephone || '' %>">
+        </div>
+        <div>
+          <label>E-mail</label>
+          <input name="email" value="<%= fiche.email || '' %>">
+        </div>
+      </div>
       <label>Siret</label>
       <input name="siret" value="<%= fiche.siret || '' %>">
-      <label>Adresse</label>
+      <label>Adresse complète</label>
       <input name="adresse" value="<%= fiche.adresse || '' %>">
-      <label>Lien de connexion au site (admin)</label>
-      <input name="lien_connexion" value="<%= fiche.lien_connexion || '' %>" placeholder="https://.../wp-admin">
+      <label>ID client Stripe</label>
+      <input name="stripe_customer_id" value="<%= fiche.stripe_customer_id || '' %>" placeholder="cus_… (ou lien du dashboard Stripe)">
       <label>Note</label>
-      <textarea name="note" rows="3"><%= fiche.note || '' %></textarea>
+      <textarea name="note" rows="4"><%= fiche.note || '' %></textarea>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;">Enregistrer</button>
     </form>
     <form method="POST" action="/clients/<%= fiche.id %>/supprimer" style="margin:12px 0 0;padding-top:12px;border-top:1px solid #F1F4F8;"
-      onsubmit="return confirm('Supprimer définitivement ce client et tous ses forfaits ?');">
+      onsubmit="return confirm('Supprimer définitivement ce client et tous ses abonnements ?');">
       <button type="submit" class="btn btn-danger" style="width:100%;">
         <span style="margin-right:6px;display:inline-flex;"><%- ico('trash', 15) %></span>Supprimer ce client
       </button>
@@ -245,24 +326,163 @@
   </div>
 </div>
 
+<div id="modal-abo" class="modal-overlay" style="display:none;">
+  <div class="modal-box wide">
+    <div class="modal-box-header">
+      <h3 style="margin:0;" id="modal-abo-titre">Ajouter un abonnement</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-abo').style.display='none'">&times;</button>
+    </div>
+    <form method="POST" action="/clients/<%= fiche.id %>/abonnements" id="form-abo">
+      <label>Produit / service</label>
+      <input name="produit" id="abo-produit" placeholder="ex. Hébergement & Nom de Domaine - 1an">
+      <label>Description (libellé Stripe)</label>
+      <input name="description" id="abo-description" placeholder="ex. Hébergement & Domaine : monsite.fr">
+      <div class="form-grid-2">
+        <div>
+          <label>Catégorie</label>
+          <%- include('partials/select-field', {
+            name: 'categorie', id: 'abo-categorie', value: 'hebergement_domaine',
+            options: K.CATEGORIES.map(function (v) { return { value: v, label: K.CATEGORIE_LABEL[v] }; })
+          }) %>
+        </div>
+        <div>
+          <label>Domaine(s)</label>
+          <input name="domaine" id="abo-domaine" placeholder="monsite.fr, autre.fr">
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div>
+          <label>Type de site</label>
+          <%- include('partials/select-field', {
+            name: 'type_site', id: 'abo-type-site', value: '', placeholder: 'Non renseigné',
+            options: [{ value: '', label: 'Non renseigné' }].concat(K.TYPES_SITE.map(function (v) { return { value: v, label: v }; }))
+          }) %>
+        </div>
+        <div>
+          <label>Chez Hostinger</label>
+          <%- include('partials/select-field', {
+            name: 'hostinger', id: 'abo-hostinger', value: '', placeholder: 'Non renseigné',
+            options: [{ value: '', label: 'Non renseigné' }].concat(K.HOSTINGER.map(function (v) { return { value: v, label: v }; }))
+          }) %>
+        </div>
+      </div>
+      <div class="form-grid-3">
+        <div>
+          <label>Prix unitaire (€)</label>
+          <input name="prix_unitaire" id="abo-prix" inputmode="decimal" placeholder="150">
+        </div>
+        <div>
+          <label>Quantité</label>
+          <input name="quantite" id="abo-quantite" inputmode="numeric" placeholder="1">
+        </div>
+        <div>
+          <label>Périodicité</label>
+          <%- include('partials/select-field', {
+            name: 'periodicite', id: 'abo-periodicite', value: 'annuel', placeholder: 'Ponctuel',
+            options: [{ value: '', label: 'Ponctuel' }].concat(K.PERIODICITES.map(function (v) { return { value: v, label: K.PERIODICITE_LABEL[v] }; }))
+          }) %>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div>
+          <label>Moyen de paiement</label>
+          <%- include('partials/select-field', {
+            name: 'moyen_paiement', id: 'abo-moyen', value: 'Prélèvement',
+            options: K.MOYENS_PAIEMENT.map(function (v) { return { value: v, label: v }; })
+          }) %>
+        </div>
+        <div>
+          <label>ID abonnement Stripe</label>
+          <input name="stripe_subscription_id" id="abo-stripe" placeholder="sub_… (ou lien Stripe)">
+        </div>
+      </div>
+      <label>Lien de connexion au site</label>
+      <input name="lien_connexion" id="abo-lien" placeholder="monsite.fr/pixel-digital">
+      <div class="form-grid-2">
+        <div>
+          <label>Identifiant</label>
+          <input name="identifiant" id="abo-identifiant" autocomplete="off">
+        </div>
+        <div>
+          <label>Mot de passe</label>
+          <input name="mot_de_passe" id="abo-mdp" autocomplete="off">
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;" id="modal-abo-submit">Ajouter</button>
+    </form>
+  </div>
+</div>
+
 <script>
+  function setSelect(id, value, placeholderLabel) {
+    var hidden = document.getElementById(id);
+    var field = hidden.closest('.select-field');
+    var opt = field.querySelector('.select-option[data-value="' + String(value == null ? '' : value).replace(/"/g, '\\"') + '"]');
+    field.querySelectorAll('.select-option').forEach(function (o) { o.classList.remove('selected'); });
+    if (!opt) {
+      hidden.value = value || '';
+      field.querySelector('.select-label').textContent = value || placeholderLabel || '';
+      return;
+    }
+    hidden.value = opt.dataset.value;
+    field.querySelector('.select-label').textContent = opt.dataset.label;
+    opt.classList.add('selected');
+  }
+
   window.ouvrirModalModifierClient = function () {
     document.getElementById('modal-client').style.display = 'flex';
+  };
+
+  // el = bouton « modifier » (data-*) ou null pour un nouvel abonnement.
+  window.ouvrirModalAbonnement = function (el) {
+    var d = el ? el.dataset : {};
+    var modal = document.getElementById('modal-abo');
+    var form = document.getElementById('form-abo');
+    form.reset();
+    document.getElementById('modal-abo-titre').textContent = el ? 'Modifier l\'abonnement' : 'Ajouter un abonnement';
+    document.getElementById('modal-abo-submit').textContent = el ? 'Enregistrer' : 'Ajouter';
+    form.action = '/clients/<%= fiche.id %>/abonnements' + (el ? '/' + d.id : '');
+    document.getElementById('abo-produit').value = d.produit || '';
+    document.getElementById('abo-description').value = d.description || '';
+    document.getElementById('abo-domaine').value = d.domaine || '';
+    document.getElementById('abo-prix').value = d.prix || '';
+    document.getElementById('abo-quantite').value = d.quantite || '';
+    document.getElementById('abo-stripe').value = d.stripe || '';
+    document.getElementById('abo-lien').value = d.lien || '';
+    document.getElementById('abo-identifiant').value = d.identifiant || '';
+    document.getElementById('abo-mdp').value = d.mdp || '';
+    setSelect('abo-categorie', el ? d.categorie : 'hebergement_domaine');
+    setSelect('abo-type-site', el ? (d.typeSite || '') : 'WordPress', 'Non renseigné');
+    setSelect('abo-hostinger', el ? (d.hostinger || '') : '', 'Non renseigné');
+    setSelect('abo-periodicite', el ? (d.periodicite || '') : 'annuel', 'Ponctuel');
+    setSelect('abo-moyen', el ? (d.moyen || '') : 'Prélèvement');
+    modal.style.display = 'flex';
   };
 </script>
 <% } %>
 
 <script>
-  // Boutons « copier » (téléphone, e-mail, siret) : coche verte 1,5 s en retour.
+  // Boutons « copier » : coche verte 1,5 s en retour.
   document.querySelectorAll('.js-copy').forEach(function (btn) {
     btn.addEventListener('click', function () {
       if (!navigator.clipboard) return;
       navigator.clipboard.writeText(btn.dataset.copy || '').then(function () {
         var avant = btn.innerHTML;
         btn.classList.add('ok');
-        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
         setTimeout(function () { btn.classList.remove('ok'); btn.innerHTML = avant; }, 1500);
       });
+    });
+  });
+
+  // Mots de passe masqués par défaut ; l'œil les révèle le temps d'un clic.
+  document.querySelectorAll('.js-pwd-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentNode.querySelector('.js-pwd-value');
+      var visible = code.dataset.visible === '1';
+      code.textContent = visible ? '••••••••••' : code.dataset.pwd;
+      code.dataset.visible = visible ? '0' : '1';
+      btn.classList.toggle('ok', !visible);
     });
   });
 </script>

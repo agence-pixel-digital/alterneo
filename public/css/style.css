@@ -323,11 +323,6 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
 .fiche-grid a { color:#2E5C8A; text-decoration:none; word-break:break-word; }
 .fiche-grid a:hover { text-decoration:underline; }
 .fiche-label { display:block; font-size:11.5px; font-weight:700; color:#9AA7B5; text-transform:uppercase; letter-spacing:.3px; margin-bottom:3px; }
-.forfait-hebergement { background:#E7EFF8; color:#244B70; }
-.forfait-nom_de_domaine { background:#EFE9F9; color:#553A8C; }
-.forfait-maintenance_classique { background:#E2F3EB; color:#15784F; }
-.forfait-maintenance_premium { background:#FBF3E2; color:#B7791F; }
-.forfait-autre { background:#EEF1F5; color:#5B6B7D; }
 @media (max-width: 700px) { .fiche-grid { grid-template-columns:1fr; } }
 
 .kanban { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; align-items:start; }
@@ -419,4 +414,96 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
   .client-hero-actions { width:100%; }
   .client-hero-actions .btn { flex:1 1 auto; }
   .forfait-add .select-field { flex-basis:100%; }
+}
+
+/* ===== CRM clients : liste, fiche, abonnements ===== */
+.stat-unit { font-size:13px; font-weight:700; color:#9AA7B5; margin-left:4px; letter-spacing:0; }
+.num-pill { display:inline-flex; align-items:center; padding:3px 9px; border-radius:8px; background:#EEF2F7; color:#244B70; font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.4px; white-space:nowrap; }
+.num-pill.big { font-size:13px; padding:4px 11px; }
+.stripe-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+.stripe-pill.on { background:#EEEDFF; color:#4B45C6; }
+.stripe-pill.off { background:#EEF1F5; color:#7A8699; }
+.btn-stripe { background:#635BFF; color:#fff; }
+.btn-stripe:hover { background:#5851E0; }
+.badge-structure { background:#F3F5F9; color:#5B6B7D; }
+.mono { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12.5px; background:#F3F5F9; padding:2px 7px; border-radius:6px; overflow-wrap:anywhere; }
+
+/* Badges par catégorie d'abonnement */
+.cat-hebergement_domaine { background:#E7EFF8; color:#244B70; }
+.cat-hebergement { background:#E0F2F4; color:#1C6B74; }
+.cat-domaine { background:#EFE9F9; color:#553A8C; }
+.cat-maintenance_classique { background:#E2F3EB; color:#15784F; }
+.cat-maintenance_premium { background:#FBF3E2; color:#B7791F; }
+.cat-site_web { background:#E8EAFB; color:#3B3FA8; }
+.cat-google_ads { background:#F8E8E2; color:#9A3D22; }
+.cat-mail { background:#FBE7F0; color:#A33468; }
+.cat-autre { background:#EEF1F5; color:#5B6B7D; }
+.ci-teal { background:#E0F2F4; color:#1C6B74; }
+.ci-indigo { background:#E8EAFB; color:#3B3FA8; }
+.ci-pink { background:#FBE7F0; color:#A33468; }
+
+/* Filtres de la liste */
+.filter-chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+.chip-filter { padding:5px 11px; border-radius:20px; border:1.5px solid #E2E7EE; background:#fff; font-size:12.5px; font-weight:700; color:#5B6B7D; cursor:pointer; }
+.chip-filter:hover { border-color:#CFDBE8; color:#2E5C8A; }
+.chip-filter.active { background:#EAF1F8; border-color:#2E5C8A; color:#2E5C8A; }
+.chip-filter .n { opacity:.65; font-weight:600; margin-left:5px; }
+
+/* Lignes de la liste */
+.client-table-head { display:flex; align-items:center; gap:16px; padding:6px 10px 8px; font-size:11.5px; font-weight:700; color:#9AA7B5; text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid #F1F4F8; }
+.client-row:hover { background:#FAFBFD; }
+.cr-num { flex:0 0 52px; }
+.cr-main { flex:1.6; min-width:150px; }
+.cr-sites { flex:1.2; min-width:140px; font-size:13px; color:#5B6B7D; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cr-site { color:#2E5C8A; font-weight:600; }
+.cr-more { margin-left:6px; font-size:11.5px; font-weight:700; color:#7A8699; background:#EEF1F5; border-radius:8px; padding:1px 6px; }
+.cr-cats { flex:1.7; min-width:160px; }
+.cr-montant { flex:.8; min-width:96px; font-size:13px; font-weight:700; color:#1C2A3A; font-variant-numeric:tabular-nums; }
+.cr-montant .muted { font-weight:600; font-size:11.5px; }
+.cr-stripe { flex:0 0 92px; }
+.cr-actions { flex:0 0 auto; display:flex; align-items:center; gap:8px; margin-left:auto; }
+
+/* Fiche : hero */
+.client-hero-top { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.client-hero-stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid #F1F4F8; }
+.hero-stat { flex:1 1 120px; background:#F6F8FB; border-radius:12px; padding:10px 14px; }
+.hero-stat-label { font-size:11px; font-weight:700; color:#9AA7B5; text-transform:uppercase; letter-spacing:.3px; }
+.hero-stat-value { font-size:18px; font-weight:800; margin-top:3px; letter-spacing:-.01em; }
+.hero-stat-unit { font-size:12px; font-weight:700; color:#9AA7B5; margin-left:3px; }
+
+/* Fiche : cartes d'abonnement */
+.abo-card { border:1px solid #E8ECF2; border-radius:14px; padding:14px 16px; margin-top:12px; }
+.abo-head { display:flex; gap:12px; align-items:flex-start; }
+.abo-title { font-size:14px; font-weight:800; overflow-wrap:anywhere; }
+.abo-desc { font-size:12.5px; color:#7A8699; margin-top:2px; overflow-wrap:anywhere; }
+.abo-price { text-align:right; font-weight:800; font-size:15.5px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.abo-price-unit { font-size:12px; font-weight:700; color:#9AA7B5; }
+.abo-price small { display:block; font-size:11.5px; color:#9AA7B5; font-weight:600; margin-top:2px; }
+.abo-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.meta-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:8px; background:#F3F5F9; font-size:12px; color:#3B4657; font-weight:600; max-width:100%; overflow-wrap:anywhere; }
+.meta-chip svg { color:#9AA7B5; flex-shrink:0; }
+.meta-chip a { color:#2E5C8A; }
+.meta-chip a:hover { text-decoration:underline; }
+.abo-access { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:10px; padding-top:10px; border-top:1px dashed #E8ECF2; font-size:12.5px; }
+.access-item { display:inline-flex; align-items:center; gap:6px; color:#3B4657; max-width:100%; overflow-wrap:anywhere; }
+.access-item svg { color:#9AA7B5; flex-shrink:0; }
+a.access-item { color:#2E5C8A; font-weight:600; }
+a.access-item:hover { text-decoration:underline; }
+.abo-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; align-items:center; }
+.abo-actions .spacer { flex:1; }
+.btn-xs { padding:4px 10px; font-size:12px; border-radius:8px; line-height:16px; }
+.icon-btn.sm { width:26px; height:26px; border-radius:7px; }
+.modal-box.wide { max-width:680px; }
+.form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+.form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 14px; }
+
+@media (max-width: 900px) {
+  .client-table-head { display:none; }
+  .cr-stripe { flex:0 0 auto; }
+}
+@media (max-width: 640px) {
+  .form-grid-2, .form-grid-3 { grid-template-columns:1fr; }
+  .abo-head { flex-wrap:wrap; }
+  .abo-price { text-align:left; width:100%; padding-left:50px; }
+  .client-hero-stats .hero-stat { flex-basis:calc(50% - 5px); }
 }
