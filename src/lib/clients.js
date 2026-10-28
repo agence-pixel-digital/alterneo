@@ -86,6 +86,8 @@ function totaux(abos) {
     if (a.periodicite === 'mensuel') { t.mensuel += m; t.nbMensuel++; }
     else if (a.periodicite === 'annuel') { t.annuel += m; t.nbAnnuel++; }
   });
+  // CA annuel estimé : les mensuels ramenés sur 12 mois + les annuels.
+  t.caAnnuel = t.mensuel * 12 + t.annuel;
   return t;
 }
 

@@ -108,6 +108,7 @@ router.get('/clients', async (req, res) => {
     global.annuel += c.totaux.annuel;
     if (c.stripe_customer_id) global.stripe++;
   });
+  global.caAnnuel = global.mensuel * 12 + global.annuel;
   res.render('clients', locaux(req, { clients: liste, global }));
 });
 

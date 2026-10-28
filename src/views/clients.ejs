@@ -7,7 +7,8 @@
   var fmt = K.formatEuro;
 %>
 
-<div class="grid-4">
+<%# Les montants sont réservés à l'admin : les alternants ne voient que les compteurs. %>
+<div class="<%= isAdmin ? 'grid-4' : 'grid-2' %>">
   <div class="card">
     <div class="stat-label">Clients</div>
     <div class="stat-value" style="color:#2E5C8A;"><%= global.clients %></div>
@@ -16,14 +17,18 @@
     <div class="stat-label">Abonnements &amp; services</div>
     <div class="stat-value" style="color:#7A53C1;"><%= global.abonnements %></div>
   </div>
-  <div class="card">
-    <div class="stat-label">Récurrent mensuel</div>
-    <div class="stat-value" style="color:#1F9D6B;"><%= fmt(global.mensuel) %><span class="stat-unit">/mois</span></div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Récurrent annuel</div>
-    <div class="stat-value" style="color:#B7791F;"><%= fmt(global.annuel) %><span class="stat-unit">/an</span></div>
-  </div>
+  <% if (isAdmin) { %>
+    <div class="card">
+      <div class="stat-label">Récurrent mensuel</div>
+      <div class="stat-value" style="color:#1F9D6B;"><%= fmt(global.mensuel) %><span class="stat-unit">/mois</span></div>
+      <div class="stat-sub"><%= fmt(global.annuel) %> d'abonnements annuels en plus</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">CA annuel estimé</div>
+      <div class="stat-value" style="color:#B7791F;"><%= fmt(global.caAnnuel) %></div>
+      <div class="stat-sub">mensuel × 12 + annuel, hors offerts</div>
+    </div>
+  <% } %>
 </div>
 
 <div class="card">
@@ -55,7 +60,7 @@
     <div class="cr-main">Client</div>
     <div class="cr-sites">Sites</div>
     <div class="cr-cats">Abonnements</div>
-    <div class="cr-montant">Facturation</div>
+    <% if (isAdmin) { %><div class="cr-montant">Facturation</div><% } %>
     <div class="cr-stripe">Stripe</div>
     <div class="cr-actions"></div>
   </div>
@@ -92,11 +97,13 @@
           </div>
         <% } %>
       </div>
-      <div class="cr-montant">
-        <% if (c.totaux.nbMensuel) { %><div><%= fmt(c.totaux.mensuel) %><span class="muted">/mois</span></div><% } %>
-        <% if (c.totaux.nbAnnuel) { %><div><%= fmt(c.totaux.annuel) %><span class="muted">/an</span></div><% } %>
-        <% if (!c.totaux.nbMensuel && !c.totaux.nbAnnuel) { %><span class="muted">—</span><% } %>
-      </div>
+      <% if (isAdmin) { %>
+        <div class="cr-montant">
+          <% if (c.totaux.nbMensuel) { %><div><%= fmt(c.totaux.mensuel) %><span class="muted">/mois</span></div><% } %>
+          <% if (c.totaux.nbAnnuel) { %><div><%= fmt(c.totaux.annuel) %><span class="muted">/an</span></div><% } %>
+          <% if (!c.totaux.nbMensuel && !c.totaux.nbAnnuel) { %><span class="muted">—</span><% } %>
+        </div>
+      <% } %>
       <div class="cr-stripe">
         <% if (c.stripe_customer_id) { %><span class="stripe-pill on" title="<%= c.stripe_customer_id %>"><%- ico('card', 12) %>Stripe</span>
         <% } else { %><span class="stripe-pill off">Hors Stripe</span><% } %>

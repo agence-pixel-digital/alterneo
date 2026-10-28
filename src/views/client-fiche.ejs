@@ -71,14 +71,21 @@
       <div class="hero-stat-label">Sites / domaines</div>
       <div class="hero-stat-value"><%= fiche.sites.length %></div>
     </div>
-    <div class="hero-stat">
-      <div class="hero-stat-label">Mensuel</div>
-      <div class="hero-stat-value" style="color:#1F8E5F;"><%= totaux.nbMensuel ? fmt(totaux.mensuel) : '—' %><% if (totaux.nbMensuel) { %><span class="hero-stat-unit">/mois</span><% } %></div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-label">Annuel</div>
-      <div class="hero-stat-value" style="color:#B7791F;"><%= totaux.nbAnnuel ? fmt(totaux.annuel) : '—' %><% if (totaux.nbAnnuel) { %><span class="hero-stat-unit">/an</span><% } %></div>
-    </div>
+    <%# Montants réservés à l'admin. %>
+    <% if (isAdmin) { %>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Mensuel</div>
+        <div class="hero-stat-value" style="color:#1F8E5F;"><%= totaux.nbMensuel ? fmt(totaux.mensuel) : '—' %><% if (totaux.nbMensuel) { %><span class="hero-stat-unit">/mois</span><% } %></div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Annuel</div>
+        <div class="hero-stat-value" style="color:#B7791F;"><%= totaux.nbAnnuel ? fmt(totaux.annuel) : '—' %><% if (totaux.nbAnnuel) { %><span class="hero-stat-unit">/an</span><% } %></div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">CA annuel estimé</div>
+        <div class="hero-stat-value" style="color:#2E5C8A;"><%= totaux.caAnnuel ? fmt(totaux.caAnnuel) : '—' %></div>
+      </div>
+    <% } %>
   </div>
 </div>
 
@@ -200,14 +207,16 @@
             <% if (a.description && a.description !== titre) { %><div class="abo-desc"><%= a.description %></div><% } %>
             <div style="margin-top:6px;"><span class="badge cat-<%= a.categorie %>"><%= K.CATEGORIE_LABEL[a.categorie] %></span></div>
           </div>
-          <div class="abo-price">
-            <% if (a.montant !== null) { %>
-              <%= fmt(a.montant) %><% if (a.periodicite) { %><span class="abo-price-unit">/<%= K.PERIODICITE_COURT[a.periodicite] %></span><% } %>
-              <% if (K.nombre(a.quantite) > 1) { %><small><%= K.nombre(a.quantite) %> × <%= fmt(a.prix_unitaire) %></small><% } %>
-            <% } else { %>
-              <span class="muted" style="font-weight:600;"><%= a.moyen_paiement === 'Offert' ? 'Offert' : (a.moyen_paiement === 'Pixel Digital' ? 'Interne' : 'Sans prix') %></span>
-            <% } %>
-          </div>
+          <% if (isAdmin) { %>
+            <div class="abo-price">
+              <% if (a.montant !== null) { %>
+                <%= fmt(a.montant) %><% if (a.periodicite) { %><span class="abo-price-unit">/<%= K.PERIODICITE_COURT[a.periodicite] %></span><% } %>
+                <% if (K.nombre(a.quantite) > 1) { %><small><%= K.nombre(a.quantite) %> × <%= fmt(a.prix_unitaire) %></small><% } %>
+              <% } else { %>
+                <span class="muted" style="font-weight:600;"><%= a.moyen_paiement === 'Offert' ? 'Offert' : (a.moyen_paiement === 'Pixel Digital' ? 'Interne' : 'Sans prix') %></span>
+              <% } %>
+            </div>
+          <% } %>
         </div>
 
         <div class="abo-meta">
