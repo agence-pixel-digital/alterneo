@@ -21,7 +21,6 @@
     <div class="client-hero-avatar" style="background:<%= couleur %>;"><%= initiales %></div>
     <div class="client-hero-main">
       <div class="client-hero-top">
-        <% if (fiche.numero) { %><span class="num-pill big">N° <%= fiche.numero %></span><% } %>
         <h2><%= nom %></h2>
         <% if (fiche.type_structure) { %><span class="badge badge-structure"><%= fiche.type_structure %></span><% } %>
       </div>
@@ -289,10 +288,12 @@
       <button type="button" class="modal-close" onclick="document.getElementById('modal-client').style.display='none'">&times;</button>
     </div>
     <form method="POST" action="/clients/<%= fiche.id %>">
+      <label>Société</label>
+      <input name="societe" value="<%= fiche.societe || '' %>">
       <div class="form-grid-2">
         <div>
-          <label>Numéro client</label>
-          <input name="numero" value="<%= fiche.numero || '' %>" inputmode="numeric">
+          <label>Client (contact)</label>
+          <input name="client" value="<%= fiche.client || '' %>">
         </div>
         <div>
           <label>Type de structure</label>
@@ -302,10 +303,6 @@
           }) %>
         </div>
       </div>
-      <label>Société</label>
-      <input name="societe" value="<%= fiche.societe || '' %>">
-      <label>Client (contact)</label>
-      <input name="client" value="<%= fiche.client || '' %>">
       <div class="form-grid-2">
         <div>
           <label>Téléphone</label>

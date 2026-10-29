@@ -9,17 +9,16 @@ const { ico, CATEGORIE_ICO } = require('../lib/icones');
 // consultent) ; création / modification / suppression réservées à l'admin
 // (double sécurité : requireAdmin côté route + RLS is_admin() côté base).
 //
-// Un client (numéro client) porte plusieurs abonnements / services : chaque
+// Un client porte plusieurs abonnements / services : chaque
 // ligne de client_abonnements correspond à une facturation (Stripe ou non).
 
 const t = (v) => { const s = (v || '').trim(); return s || null; };
 
 // Champs de la fiche client : chaîne vide -> null (pas de valeurs « » en base).
+// Le numéro client (import Stripe) n'est plus saisi ni affiché : il reste en base
+// comme simple trace de l'import, les abonnements étant rattachés par client_id.
 function lireClient(body) {
-  let numero = t(body.numero);
-  if (numero && /^\d{1,3}$/.test(numero)) numero = numero.padStart(3, '0');
   return {
-    numero,
     societe: t(body.societe),
     client: t(body.client),
     telephone: t(body.telephone),
@@ -98,8 +97,8 @@ router.get('/clients', async (req, res) => {
   const { data: clients } = await req.db
     .from('clients')
     .select(SELECT_CLIENT)
-    .order('numero', { ascending: true, nullsFirst: false })
-    .order('societe', { ascending: true, nullsFirst: false });
+    .order('societe', { ascending: true, nullsFirst: false })
+    .order('client', { ascending: true, nullsFirst: false });
   const liste = (clients || []).map(preparerClient);
   const global = { clients: liste.length, abonnements: 0, mensuel: 0, annuel: 0, stripe: 0 };
   liste.forEach(c => {

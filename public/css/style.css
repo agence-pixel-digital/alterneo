@@ -419,8 +419,6 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
 /* ===== CRM clients : liste, fiche, abonnements ===== */
 .stat-sub { font-size:12px; color:#9AA7B5; font-weight:600; margin-top:6px; }
 .stat-unit { font-size:13px; font-weight:700; color:#9AA7B5; margin-left:4px; letter-spacing:0; }
-.num-pill { display:inline-flex; align-items:center; padding:3px 9px; border-radius:8px; background:#EEF2F7; color:#244B70; font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.4px; white-space:nowrap; }
-.num-pill.big { font-size:13px; padding:4px 11px; }
 .stripe-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap; }
 .stripe-pill.on { background:#EEEDFF; color:#4B45C6; }
 .stripe-pill.off { background:#EEF1F5; color:#7A8699; }
@@ -453,7 +451,6 @@ input, textarea, select { width:100%; padding:11px 13px; border:1.5px solid #E2E
 /* Lignes de la liste */
 .client-table-head { display:flex; align-items:center; gap:16px; padding:6px 10px 8px; font-size:11.5px; font-weight:700; color:#9AA7B5; text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid #F1F4F8; }
 .client-row:hover { background:#FAFBFD; }
-.cr-num { flex:0 0 52px; }
 .cr-main { flex:1.6; min-width:150px; }
 .cr-sites { flex:1.2; min-width:140px; font-size:13px; color:#5B6B7D; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cr-site { color:#2E5C8A; font-weight:600; }
