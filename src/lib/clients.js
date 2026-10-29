@@ -17,7 +17,7 @@ const CATEGORIE_RANG = {};
 CATEGORIES.forEach((c, i) => { CATEGORIE_RANG[c] = i; });
 
 const PERIODICITES = ['mensuel', 'annuel'];
-const PERIODICITE_LABEL = { mensuel: 'Mensuel', annuel: 'Annuel' };
+const PERIODICITE_LABEL = { mensuel: 'Facturation mensuelle', annuel: 'Facturation annuelle' };
 const PERIODICITE_COURT = { mensuel: 'mois', annuel: 'an' };
 
 // Valeurs rencontrées dans l'état des lieux Stripe ; champs libres en base,
@@ -78,6 +78,14 @@ function montant(abo) {
   return prix * (nombre(abo.quantite) || 1);
 }
 
+// Montant annualisé d'une ligne : les mensuels × 12, les annuels tels quels,
+// les ponctuels tels quels (affichage uniformisé « par an » dans tout le CRM).
+function montantAnnuel(abo) {
+  const m = montant(abo);
+  if (m === null) return null;
+  return abo.periodicite === 'mensuel' ? m * 12 : m;
+}
+
 function totaux(abos) {
   const t = { mensuel: 0, annuel: 0, nbMensuel: 0, nbAnnuel: 0 };
   (abos || []).forEach(a => {
@@ -115,6 +123,6 @@ module.exports = {
   PERIODICITES, PERIODICITE_LABEL, PERIODICITE_COURT,
   MOYENS_PAIEMENT, TYPES_SITE, HOSTINGER, TYPES_STRUCTURE,
   lienStripeClient, lienStripeAbonnement, extraireIdStripe,
-  domaines, liensConnexion, urlSure, nombre, montant, totaux, formatEuro,
+  domaines, liensConnexion, urlSure, nombre, montant, montantAnnuel, totaux, formatEuro,
   trierAbonnements, categoriesDe
 };

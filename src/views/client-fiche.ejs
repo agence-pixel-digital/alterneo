@@ -70,19 +70,11 @@
       <div class="hero-stat-label">Sites / domaines</div>
       <div class="hero-stat-value"><%= fiche.sites.length %></div>
     </div>
-    <%# Montants réservés à l'admin. %>
+    <%# Montants réservés à l'admin, toujours annualisés (mensuels × 12). %>
     <% if (isAdmin) { %>
       <div class="hero-stat">
-        <div class="hero-stat-label">Mensuel</div>
-        <div class="hero-stat-value" style="color:#1F8E5F;"><%= totaux.nbMensuel ? fmt(totaux.mensuel) : '—' %><% if (totaux.nbMensuel) { %><span class="hero-stat-unit">/mois</span><% } %></div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-label">Annuel</div>
-        <div class="hero-stat-value" style="color:#B7791F;"><%= totaux.nbAnnuel ? fmt(totaux.annuel) : '—' %><% if (totaux.nbAnnuel) { %><span class="hero-stat-unit">/an</span><% } %></div>
-      </div>
-      <div class="hero-stat">
         <div class="hero-stat-label">CA annuel estimé</div>
-        <div class="hero-stat-value" style="color:#2E5C8A;"><%= totaux.caAnnuel ? fmt(totaux.caAnnuel) : '—' %></div>
+        <div class="hero-stat-value" style="color:#2E5C8A;"><%= totaux.caAnnuel ? fmt(totaux.caAnnuel) : '—' %><% if (totaux.caAnnuel) { %><span class="hero-stat-unit">/an</span><% } %></div>
       </div>
     <% } %>
   </div>
@@ -209,8 +201,8 @@
           <% if (isAdmin) { %>
             <div class="abo-price">
               <% if (a.montant !== null) { %>
-                <%= fmt(a.montant) %><% if (a.periodicite) { %><span class="abo-price-unit">/<%= K.PERIODICITE_COURT[a.periodicite] %></span><% } %>
-                <% if (K.nombre(a.quantite) > 1) { %><small><%= K.nombre(a.quantite) %> × <%= fmt(a.prix_unitaire) %></small><% } %>
+                <%= fmt(K.montantAnnuel(a)) %><span class="abo-price-unit"><%= a.periodicite ? '/an' : ' ponctuel' %></span>
+                <% if (K.nombre(a.quantite) > 1) { %><small><%= K.nombre(a.quantite) %> × <%= fmt(K.nombre(a.prix_unitaire) * (a.periodicite === 'mensuel' ? 12 : 1)) %></small><% } %>
               <% } else { %>
                 <span class="muted" style="font-weight:600;"><%= a.moyen_paiement === 'Offert' ? 'Offert' : (a.moyen_paiement === 'Pixel Digital' ? 'Interne' : 'Sans prix') %></span>
               <% } %>
@@ -374,7 +366,7 @@
       </div>
       <div class="form-grid-3">
         <div>
-          <label>Prix unitaire (€)</label>
+          <label>Prix unitaire (€, par échéance)</label>
           <input name="prix_unitaire" id="abo-prix" inputmode="decimal" placeholder="150">
         </div>
         <div>

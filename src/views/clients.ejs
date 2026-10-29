@@ -7,8 +7,8 @@
   var fmt = K.formatEuro;
 %>
 
-<%# Les montants sont réservés à l'admin : les alternants ne voient que les compteurs. %>
-<div class="<%= isAdmin ? 'grid-4' : 'grid-2' %>">
+<%# Les montants sont réservés à l'admin et toujours annualisés : les alternants ne voient que les compteurs. %>
+<div class="<%= isAdmin ? 'grid-3' : 'grid-2' %>">
   <div class="card">
     <div class="stat-label">Clients</div>
     <div class="stat-value" style="color:#2E5C8A;"><%= global.clients %></div>
@@ -19,14 +19,9 @@
   </div>
   <% if (isAdmin) { %>
     <div class="card">
-      <div class="stat-label">Récurrent mensuel</div>
-      <div class="stat-value" style="color:#1F9D6B;"><%= fmt(global.mensuel) %><span class="stat-unit">/mois</span></div>
-      <div class="stat-sub"><%= fmt(global.annuel) %> d'abonnements annuels en plus</div>
-    </div>
-    <div class="card">
       <div class="stat-label">CA annuel estimé</div>
-      <div class="stat-value" style="color:#B7791F;"><%= fmt(global.caAnnuel) %></div>
-      <div class="stat-sub">mensuel × 12 + annuel, hors offerts</div>
+      <div class="stat-value" style="color:#B7791F;"><%= fmt(global.caAnnuel) %><span class="stat-unit">/an</span></div>
+      <div class="stat-sub">abonnements mensuels × 12 + abonnements annuels, hors offerts</div>
     </div>
   <% } %>
 </div>
@@ -59,7 +54,7 @@
     <div class="cr-main">Client</div>
     <div class="cr-sites">Sites</div>
     <div class="cr-cats">Abonnements</div>
-    <% if (isAdmin) { %><div class="cr-montant">Facturation</div><% } %>
+    <% if (isAdmin) { %><div class="cr-montant">CA annuel</div><% } %>
     <div class="cr-stripe">Stripe</div>
     <div class="cr-actions"></div>
   </div>
@@ -97,9 +92,8 @@
       </div>
       <% if (isAdmin) { %>
         <div class="cr-montant">
-          <% if (c.totaux.nbMensuel) { %><div><%= fmt(c.totaux.mensuel) %><span class="muted">/mois</span></div><% } %>
-          <% if (c.totaux.nbAnnuel) { %><div><%= fmt(c.totaux.annuel) %><span class="muted">/an</span></div><% } %>
-          <% if (!c.totaux.nbMensuel && !c.totaux.nbAnnuel) { %><span class="muted">—</span><% } %>
+          <% if (c.totaux.nbMensuel || c.totaux.nbAnnuel) { %><div><%= fmt(c.totaux.caAnnuel) %><span class="muted">/an</span></div>
+          <% } else { %><span class="muted">—</span><% } %>
         </div>
       <% } %>
       <div class="cr-stripe">
