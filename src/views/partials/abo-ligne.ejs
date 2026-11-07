@@ -1,11 +1,10 @@
 <%#
-  Une ligne « produit / service » d'un client.
-  Paramètres : a (abonnement préparé), fiche, isAdmin, K, ico, CATEGORIE_ICO, attr, fmt,
-  dansGroupe (true : la ligne est affichée sous un abonnement Stripe qui porte déjà
-  la périodicité, le moyen de paiement et le bouton Stripe).
+  Un produit / service (ligne de client_abonnements) affiché sous son abonnement.
+  Paramètres : a (produit préparé), s (abonnement), fiche, isAdmin, K, ico, CATEGORIE_ICO, attr.
+  Le prix, la périodicité et le moyen de paiement sont portés par l'abonnement, pas ici.
 %>
 <% var ci = CATEGORIE_ICO[a.categorie] || CATEGORIE_ICO.autre; var titre = a.produit || a.description || K.CATEGORIE_LABEL[a.categorie]; %>
-<div class="<%= dansGroupe ? 'abo-line' : 'abo-seul' %>" id="abo-<%= a.id %>">
+<div class="abo-line" id="produit-<%= a.id %>">
   <div class="abo-head">
     <div class="forfait-icon <%= ci[1] %>"><%- ico(ci[0]) %></div>
     <div style="flex:1;min-width:0;">
@@ -13,28 +12,17 @@
       <% if (a.description && a.description !== titre) { %><div class="abo-desc"><%= a.description %></div><% } %>
       <div style="margin-top:6px;"><span class="badge cat-<%= a.categorie %>"><%= K.CATEGORIE_LABEL[a.categorie] %></span></div>
     </div>
-    <% if (isAdmin) { %>
-      <div class="abo-price">
-        <% if (a.montant !== null) { %>
-          <%= fmt(K.montantAnnuel(a)) %><span class="abo-price-unit"><%= a.periodicite ? '/an' : ' ponctuel' %></span>
-          <% if (K.nombre(a.quantite) > 1) { %><small><%= K.nombre(a.quantite) %> × <%= fmt(K.nombre(a.prix_unitaire) * (a.periodicite === 'mensuel' ? 12 : 1)) %></small><% } %>
-        <% } else { %>
-          <span class="muted" style="font-weight:600;"><%= a.moyen_paiement === 'Offert' ? 'Offert' : (a.moyen_paiement === 'Pixel Digital' ? 'Interne' : 'Sans prix') %></span>
-        <% } %>
-      </div>
-    <% } %>
   </div>
 
-  <div class="abo-meta">
-    <% a.domaines.forEach(function (d) { %>
-      <span class="meta-chip"><%- ico('globe', 12) %><a href="<%= K.urlSure(d) %>" target="_blank" rel="noopener noreferrer"><%= d %></a></span>
-    <% }); %>
-    <% if (a.type_site) { %><span class="meta-chip" title="Type de site"><%- ico('layout', 12) %><%= a.type_site %></span><% } %>
-    <% if (a.hostinger) { %><span class="meta-chip" title="Chez Hostinger"><%- ico('server', 12) %>Hostinger : <%= a.hostinger %></span><% } %>
-    <% if (!dansGroupe && a.periodicite) { %><span class="meta-chip" title="Périodicité"><%- ico('repeat', 12) %><%= K.PERIODICITE_LABEL[a.periodicite] %></span><% } %>
-    <% if (!dansGroupe && a.moyen_paiement) { %><span class="meta-chip" title="Moyen de paiement"><%- ico('card', 12) %><%= a.moyen_paiement %></span><% } %>
-    <% if (K.nombre(a.quantite) !== null) { %><span class="meta-chip" title="Quantité"><%- ico('hash', 12) %>Qté <%= K.nombre(a.quantite) %></span><% } %>
-  </div>
+  <% if (a.domaines.length || a.type_site || a.hostinger) { %>
+    <div class="abo-meta">
+      <% a.domaines.forEach(function (d) { %>
+        <span class="meta-chip"><%- ico('globe', 12) %><a href="<%= K.urlSure(d) %>" target="_blank" rel="noopener noreferrer"><%= d %></a></span>
+      <% }); %>
+      <% if (a.type_site) { %><span class="meta-chip" title="Type de site"><%- ico('layout', 12) %><%= a.type_site %></span><% } %>
+      <% if (a.hostinger) { %><span class="meta-chip" title="Chez Hostinger"><%- ico('server', 12) %>Hostinger : <%= a.hostinger %></span><% } %>
+    </div>
+  <% } %>
 
   <% if (a.identifiant || a.mot_de_passe || a.liens.length) { %>
     <div class="abo-access">
@@ -53,29 +41,26 @@
     </div>
   <% } %>
 
-  <div class="abo-actions">
-    <% if (a.lienMainWP && a.mainwpConnecte !== false) { %>
-      <a href="<%= a.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" title="Connexion en 1 clic au wp-admin via MainWP">
-        <span style="margin-right:4px;display:inline-flex;"><%- ico('zap', 12) %></span>Connexion 1 clic
-      </a>
-    <% } else if (a.lienMainWP) { %>
-      <span class="mainwp-hint" title="Ce domaine n'est pas géré par MainWP (plugin MainWP Child absent)."><%- ico('zap', 12) %>Pas connecté à MainWP</span>
-    <% } %>
-    <% if (!dansGroupe && a.moyen_paiement && a.moyen_paiement !== 'Prélèvement' && a.moyen_paiement !== 'CB') { %>
-      <span class="muted" style="font-size:12px;">Hors Stripe · <%= a.moyen_paiement %></span>
-    <% } %>
-    <span class="spacer"></span>
-    <% if (isAdmin) { %>
-      <button type="button" class="icon-btn sm" title="Modifier ce produit / service" onclick="ouvrirModalAbonnement(this)"
-        data-id="<%= a.id %>" data-produit="<%= attr(a.produit) %>" data-description="<%= attr(a.description) %>" data-categorie="<%= a.categorie %>"
-        data-domaine="<%= attr(a.domaine) %>" data-type-site="<%= attr(a.type_site) %>" data-hostinger="<%= attr(a.hostinger) %>"
-        data-prix="<%= attr(a.prix_unitaire) %>" data-quantite="<%= attr(a.quantite) %>" data-periodicite="<%= attr(a.periodicite) %>"
-        data-moyen="<%= attr(a.moyen_paiement) %>" data-stripe="<%= attr(a.stripe_subscription_id) %>" data-lien="<%= attr(a.lien_connexion) %>"
-        data-identifiant="<%= attr(a.identifiant) %>" data-mdp="<%= attr(a.mot_de_passe) %>"><%- ico('pencil', 13) %></button>
-      <form method="POST" action="/clients/<%= fiche.id %>/abonnements/<%= a.id %>/supprimer" style="margin:0;"
-        onsubmit="return confirm('Retirer ce produit / service ?');">
-        <button type="submit" class="icon-btn sm danger" title="Retirer ce produit / service"><%- ico('x', 13) %></button>
-      </form>
-    <% } %>
-  </div>
+  <% if (a.lienMainWP || isAdmin) { %>
+    <div class="abo-actions">
+      <% if (a.lienMainWP && a.mainwpConnecte !== false) { %>
+        <a href="<%= a.lienMainWP %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" title="Connexion en 1 clic au wp-admin via MainWP">
+          <span style="margin-right:4px;display:inline-flex;"><%- ico('zap', 12) %></span>Connexion 1 clic
+        </a>
+      <% } else if (a.lienMainWP) { %>
+        <span class="mainwp-hint" title="Ce domaine n'est pas géré par MainWP (plugin MainWP Child absent)."><%- ico('zap', 12) %>Pas connecté à MainWP</span>
+      <% } %>
+      <span class="spacer"></span>
+      <% if (isAdmin) { %>
+        <button type="button" class="icon-btn sm" title="Modifier ce produit / service" onclick="ouvrirModalProduit(this)"
+          data-id="<%= a.id %>" data-sid="<%= s.id %>" data-produit="<%= attr(a.produit) %>" data-description="<%= attr(a.description) %>" data-categorie="<%= a.categorie %>"
+          data-domaine="<%= attr(a.domaine) %>" data-type-site="<%= attr(a.type_site) %>" data-hostinger="<%= attr(a.hostinger) %>" data-lien="<%= attr(a.lien_connexion) %>"
+          data-identifiant="<%= attr(a.identifiant) %>" data-mdp="<%= attr(a.mot_de_passe) %>"><%- ico('pencil', 13) %></button>
+        <form method="POST" action="/clients/<%= fiche.id %>/abonnements/<%= s.id %>/produits/<%= a.id %>/supprimer" style="margin:0;"
+          onsubmit="return confirm('Retirer ce produit / service ?<%= s.produits.length === 1 ? " L\'abonnement, qui n\'aurait plus de produit, sera supprimé aussi." : '' %>');">
+          <button type="submit" class="icon-btn sm danger" title="Retirer ce produit / service"><%- ico('x', 13) %></button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
 </div>

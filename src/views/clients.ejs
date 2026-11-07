@@ -64,7 +64,8 @@
       var sousTitre = (c.societe && c.client && c.client !== c.societe) ? c.client : '';
       var recherche = [c.societe, c.client, c.email, c.telephone, c.siret, c.adresse, c.type_structure, c.stripe_customer_id, c.note]
         .concat(c.sites)
-        .concat(c.abonnements.map(function (a) { return [a.produit, a.description, K.CATEGORIE_LABEL[a.categorie], a.stripe_subscription_id, a.moyen_paiement, a.type_site, a.identifiant].filter(Boolean).join(' '); }))
+        .concat(c.produits.map(function (a) { return [a.produit, a.description, K.CATEGORIE_LABEL[a.categorie], a.type_site, a.identifiant].filter(Boolean).join(' '); }))
+        .concat(c.souscriptions.map(function (s) { return [s.stripe_subscription_id, s.moyen_paiement].filter(Boolean).join(' '); }))
         .filter(Boolean).join(' ').toLowerCase();
     %>
     <div class="list-row client-row" data-search="<%= recherche %>" data-cats="<%= c.categories.join(',') %>" data-stripe="<%= c.stripe_customer_id ? 1 : 0 %>"
@@ -79,11 +80,11 @@
         <% } else { %><span class="muted">—</span><% } %>
       </div>
       <div class="cr-cats">
-        <% if (c.abonnements.length === 0) { %>
+        <% if (c.produits.length === 0) { %>
           <span class="muted" style="font-size:12.5px;">Aucun abonnement</span>
         <% } else { %>
           <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            <% c.categories.forEach(function (k) { var n = c.abonnements.filter(function (a) { return a.categorie === k; }).length; %>
+            <% c.categories.forEach(function (k) { var n = c.produits.filter(function (a) { return a.categorie === k; }).length; %>
               <span class="badge cat-<%= k %>"><%= K.CATEGORIE_LABEL[k] %><% if (n > 1) { %> ×<%= n %><% } %></span>
             <% }); %>
           </div>

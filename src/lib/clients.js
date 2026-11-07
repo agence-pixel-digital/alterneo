@@ -1,5 +1,10 @@
-// Référentiel et calculs du CRM clients : catégories d'abonnement, liens Stripe,
+// Référentiel et calculs du CRM clients : catégories de produits, liens Stripe,
 // montants et totaux. Partagé entre les routes et les vues (via les locals).
+//
+// Vocabulaire : un « abonnement » (table client_souscriptions) porte l'ID Stripe,
+// le prix, la quantité, la périodicité et le moyen de paiement ; il regroupe un ou
+// plusieurs « produits / services » (table client_abonnements : produit, domaine,
+// catégorie, accès au site).
 
 const CATEGORIES = ['hebergement_domaine', 'hebergement', 'domaine', 'maintenance_classique', 'maintenance_premium', 'site_web', 'google_ads', 'mail', 'autre'];
 const CATEGORIE_LABEL = {
@@ -71,14 +76,15 @@ function nombre(v) {
   return isFinite(n) ? n : null;
 }
 
-// Montant d'une ligne = prix unitaire × quantité (quantité absente = 1).
+// Montant d'un abonnement = prix unitaire × quantité (quantité absente = 1).
+// Le prix se porte au niveau de l'abonnement (client_souscriptions), jamais du produit.
 function montant(abo) {
   const prix = nombre(abo.prix_unitaire);
   if (prix === null) return null;
   return prix * (nombre(abo.quantite) || 1);
 }
 
-// Montant annualisé d'une ligne : les mensuels × 12, les annuels tels quels,
+// Montant annualisé d'un abonnement : les mensuels × 12, les annuels tels quels,
 // les ponctuels tels quels (affichage uniformisé « par an » dans tout le CRM).
 function montantAnnuel(abo) {
   const m = montant(abo);
@@ -111,32 +117,6 @@ function trierAbonnements(liste) {
     (a.ordre - b.ordre) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
 }
 
-// Regroupe les lignes par abonnement : les lignes qui partagent un même ID
-// d'abonnement Stripe forment un seul abonnement à plusieurs produits / services ;
-// une ligne sans ID Stripe est un abonnement à elle seule.
-function grouperAbonnements(abos) {
-  const groupes = [];
-  const parCle = {};
-  (abos || []).forEach(a => {
-    const cle = a.stripe_subscription_id ? 'stripe:' + a.stripe_subscription_id : 'ligne:' + a.id;
-    let g = parCle[cle];
-    if (!g) {
-      g = { cle, stripe_subscription_id: a.stripe_subscription_id || null, lienStripe: lienStripeAbonnement(a.stripe_subscription_id), lignes: [], periodicites: [], moyens: [] };
-      parCle[cle] = g; groupes.push(g);
-    }
-    g.lignes.push(a);
-    if (a.periodicite && !g.periodicites.includes(a.periodicite)) g.periodicites.push(a.periodicite);
-    if (a.moyen_paiement && !g.moyens.includes(a.moyen_paiement)) g.moyens.push(a.moyen_paiement);
-  });
-  groupes.forEach(g => {
-    let total = null;
-    g.lignes.forEach(a => { const m = montantAnnuel(a); if (m !== null) total = (total || 0) + m; });
-    g.montantAnnuel = total;
-    g.ponctuel = g.lignes.every(a => !a.periodicite);
-  });
-  return groupes;
-}
-
 // Catégories présentes chez un client, dans l'ordre du référentiel, sans doublon.
 function categoriesDe(abos) {
   const vues = {};
@@ -150,5 +130,5 @@ module.exports = {
   MOYENS_PAIEMENT, TYPES_SITE, HOSTINGER, TYPES_STRUCTURE,
   lienStripeClient, lienStripeAbonnement, extraireIdStripe,
   domaines, liensConnexion, urlSure, nombre, montant, montantAnnuel, totaux, formatEuro,
-  trierAbonnements, categoriesDe, grouperAbonnements
+  trierAbonnements, categoriesDe
 };

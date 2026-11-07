@@ -7,8 +7,8 @@
   var COULEURS = ['#2E5C8A', '#7A53C1', '#1F8E5F', '#C2502E', '#B7791F', '#2A7F9E', '#8A4F7D'];
   var h = 0; for (var i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) >>> 0;
   var couleur = COULEURS[h % COULEURS.length];
-  var abos = fiche.abonnements;
-  var groupes = fiche.groupes;
+  var souscriptions = fiche.souscriptions;
+  var produits = fiche.produits;
   var totaux = fiche.totaux;
   var sitePrincipal = fiche.sites[0] || null;
   // Sérialisation sûre pour les attributs data-* (le modal de modification relit ces valeurs).
@@ -65,7 +65,7 @@
   <div class="client-hero-stats">
     <div class="hero-stat">
       <div class="hero-stat-label">Abonnements</div>
-      <div class="hero-stat-value"><%= groupes.length %><% if (abos.length !== groupes.length) { %><span class="hero-stat-unit"><%= abos.length %> produits</span><% } %></div>
+      <div class="hero-stat-value"><%= souscriptions.length %><% if (produits.length !== souscriptions.length) { %><span class="hero-stat-unit"><%= produits.length %> produits</span><% } %></div>
     </div>
     <div class="hero-stat">
       <div class="hero-stat-label">Sites / domaines</div>
@@ -178,67 +178,89 @@
 
   <div class="card">
     <div class="card-title">
-      <span>Abonnements &amp; services <span class="count"><%= groupes.length %></span></span>
+      <span>Abonnements &amp; services <span class="count"><%= souscriptions.length %></span></span>
       <% if (isAdmin) { %>
         <button type="button" class="btn btn-outline btn-sm" onclick="ouvrirModalAbonnement(null)">
-          <span style="margin-right:4px;display:inline-flex;"><%- ico('plus', 13) %></span>Ajouter
+          <span style="margin-right:4px;display:inline-flex;"><%- ico('plus', 13) %></span>Ajouter un abonnement
         </button>
       <% } %>
     </div>
 
-    <% if (abos.length === 0) { %>
+    <% if (souscriptions.length === 0) { %>
       <div class="empty-state" style="padding:22px 10px;">Aucun abonnement pour ce client pour l'instant.</div>
     <% } %>
 
-    <% groupes.forEach(function (g) { %>
-      <% if (g.stripe_subscription_id) { var planif = /^sub_sched_/.test(g.stripe_subscription_id); %>
-        <%# Abonnement Stripe : un en-tête commun, puis ses produits / services. %>
-        <div class="abo-card abo-groupe">
-          <div class="abo-group-head">
-            <div class="forfait-icon ci-indigo"><%- ico('card') %></div>
-            <div style="flex:1;min-width:0;">
-              <div class="abo-title"><%= planif ? 'Planification Stripe' : 'Abonnement Stripe' %>
-                <span class="abo-group-n"><%= g.lignes.length %> produit<%= g.lignes.length > 1 ? 's' : '' %> / service<%= g.lignes.length > 1 ? 's' : '' %></span></div>
-              <div class="abo-group-meta">
-                <code class="mono" title="<%= g.stripe_subscription_id %>"><%= g.stripe_subscription_id %></code>
-                <button type="button" class="icon-btn sm js-copy" data-copy="<%= g.stripe_subscription_id %>" title="Copier l'ID"><%- ico('copy', 12) %></button>
-                <% g.periodicites.forEach(function (pr) { %><span class="meta-chip" title="Périodicité"><%- ico('repeat', 12) %><%= K.PERIODICITE_LABEL[pr] %></span><% }); %>
-                <% g.moyens.forEach(function (m) { %><span class="meta-chip" title="Moyen de paiement"><%- ico('card', 12) %><%= m %></span><% }); %>
-              </div>
+    <%# Un abonnement = une carte : en-tête (Stripe, prix, périodicité, paiement) puis ses produits / services. %>
+    <% souscriptions.forEach(function (s) { var premier = s.produits[0] || {}; var ci = s.stripe_subscription_id ? ['card', 'ci-indigo'] : (CATEGORIE_ICO[premier.categorie] || CATEGORIE_ICO.autre); %>
+      <div class="abo-card abo-groupe" id="abo-<%= s.id %>">
+        <div class="abo-group-head">
+          <div class="forfait-icon <%= ci[1] %>"><%- ico(ci[0]) %></div>
+          <div class="abo-group-main">
+            <div class="abo-title">
+              <% if (s.stripe_subscription_id) { %><%= s.planification ? 'Planification Stripe' : 'Abonnement Stripe' %>
+              <% } else if (s.moyen_paiement === 'Offert') { %>Offert
+              <% } else if (s.moyen_paiement === 'Pixel Digital') { %>Interne Pixel Digital
+              <% } else { %>Hors Stripe<% if (s.moyen_paiement) { %> · <%= s.moyen_paiement %><% } %><% } %>
+              <% if (s.produits.length > 1) { %><span class="abo-group-n"><%= s.produits.length %> produits / services</span><% } %>
             </div>
-            <% if (isAdmin) { %>
-              <div class="abo-price">
-                <% if (g.montantAnnuel !== null) { %><%= fmt(g.montantAnnuel) %><span class="abo-price-unit"><%= g.ponctuel ? ' ponctuel' : '/an' %></span>
-                <% } else { %><span class="muted" style="font-weight:600;">Sans prix</span><% } %>
-                <% if (g.lignes.length > 1) { %><small>total de l'abonnement</small><% } %>
-              </div>
-            <% } %>
+            <div class="abo-group-meta">
+              <% if (s.stripe_subscription_id) { %>
+                <code class="mono" title="<%= s.stripe_subscription_id %>"><%= s.stripe_subscription_id %></code>
+                <button type="button" class="icon-btn sm js-copy" data-copy="<%= s.stripe_subscription_id %>" title="Copier l'ID"><%- ico('copy', 12) %></button>
+              <% } %>
+              <% if (s.periodicite) { %><span class="meta-chip" title="Périodicité"><%- ico('repeat', 12) %><%= K.PERIODICITE_LABEL[s.periodicite] %></span>
+              <% } else { %><span class="meta-chip" title="Périodicité"><%- ico('repeat', 12) %>Ponctuel</span><% } %>
+              <% if (s.stripe_subscription_id && s.moyen_paiement) { %><span class="meta-chip" title="Moyen de paiement"><%- ico('card', 12) %><%= s.moyen_paiement %></span><% } %>
+              <% if (K.nombre(s.quantite) > 1) { %><span class="meta-chip" title="Quantité"><%- ico('hash', 12) %>Qté <%= K.nombre(s.quantite) %></span><% } %>
+            </div>
           </div>
-          <div class="abo-lines">
-            <% g.lignes.forEach(function (a) { %>
-              <%- include('partials/abo-ligne', { a: a, fiche: fiche, isAdmin: isAdmin, K: K, ico: ico, CATEGORIE_ICO: CATEGORIE_ICO, attr: attr, fmt: fmt, dansGroupe: true }) %>
-            <% }); %>
-          </div>
+          <% if (isAdmin) { %>
+            <div class="abo-group-side">
+            <div class="abo-price">
+              <% if (s.montant !== null) { %>
+                <%= fmt(s.montantAnnuel) %><span class="abo-price-unit"><%= s.periodicite ? '/an' : ' ponctuel' %></span>
+                <% if (K.nombre(s.quantite) > 1) { %><small><%= K.nombre(s.quantite) %> × <%= fmt(K.nombre(s.prix_unitaire) * (s.periodicite === 'mensuel' ? 12 : 1)) %></small><% } %>
+                <% if (s.produits.length > 1) { %><small>pour l'ensemble de l'abonnement</small><% } %>
+              <% } else { %>
+                <span class="muted" style="font-weight:600;"><%= s.moyen_paiement === 'Offert' ? 'Offert' : (s.moyen_paiement === 'Pixel Digital' ? 'Interne' : 'Sans prix') %></span>
+              <% } %>
+            </div>
+            <div class="abo-group-tools">
+              <button type="button" class="icon-btn sm" title="Modifier l'abonnement (prix, périodicité, paiement, Stripe)" onclick="ouvrirModalAbonnement(this)"
+                data-id="<%= s.id %>" data-prix="<%= attr(s.prix_unitaire) %>" data-quantite="<%= attr(s.quantite) %>" data-periodicite="<%= attr(s.periodicite) %>"
+                data-moyen="<%= attr(s.moyen_paiement) %>" data-stripe="<%= attr(s.stripe_subscription_id) %>"><%- ico('pencil', 13) %></button>
+              <form method="POST" action="/clients/<%= fiche.id %>/abonnements/<%= s.id %>/supprimer" style="margin:0;"
+                onsubmit="return confirm('Supprimer cet abonnement et <%= s.produits.length > 1 ? 'ses ' + s.produits.length + ' produits / services' : 'son produit / service' %> ?');">
+                <button type="submit" class="icon-btn sm danger" title="Supprimer l'abonnement"><%- ico('x', 13) %></button>
+              </form>
+            </div>
+            </div>
+          <% } %>
+        </div>
+        <div class="abo-lines">
+          <% s.produits.forEach(function (a) { %>
+            <%- include('partials/abo-ligne', { a: a, s: s, fiche: fiche, isAdmin: isAdmin, K: K, ico: ico, CATEGORIE_ICO: CATEGORIE_ICO, attr: attr }) %>
+          <% }); %>
+        </div>
+        <% if (s.lienStripe || isAdmin) { %>
           <div class="abo-actions abo-group-actions">
-            <a href="<%= g.lienStripe %>" target="_blank" rel="noopener noreferrer" class="btn btn-stripe btn-xs" title="<%= g.stripe_subscription_id %>">
-              <span style="margin-right:4px;display:inline-flex;"><%- ico('card', 12) %></span>Ouvrir dans Stripe
-            </a>
+            <% if (s.lienStripe) { %>
+              <a href="<%= s.lienStripe %>" target="_blank" rel="noopener noreferrer" class="btn btn-stripe btn-xs" title="<%= s.stripe_subscription_id %>">
+                <span style="margin-right:4px;display:inline-flex;"><%- ico('card', 12) %></span>Ouvrir dans Stripe
+              </a>
+            <% } %>
             <span class="spacer"></span>
             <% if (isAdmin) { %>
-              <button type="button" class="btn btn-outline btn-xs" onclick="ouvrirModalAbonnement(this)"
-                data-stripe="<%= g.stripe_subscription_id %>" data-periodicite="<%= g.periodicites[0] || '' %>" data-moyen="<%= g.moyens[0] || '' %>"
-                data-domaine="<%= attr(g.lignes[0].domaine) %>" data-type-site="<%= attr(g.lignes[0].type_site) %>" data-hostinger="<%= attr(g.lignes[0].hostinger) %>"
-                title="Ajouter un produit / service à cet abonnement Stripe">
+              <button type="button" class="btn btn-outline btn-xs" onclick="ouvrirModalProduit(this)" data-sid="<%= s.id %>"
+                data-domaine="<%= attr(premier.domaine) %>" data-type-site="<%= attr(premier.type_site) %>" data-hostinger="<%= attr(premier.hostinger) %>"
+                data-lien="<%= attr(premier.lien_connexion) %>" data-identifiant="<%= attr(premier.identifiant) %>" data-mdp="<%= attr(premier.mot_de_passe) %>"
+                title="Ajouter un produit / service à cet abonnement">
                 <span style="margin-right:4px;display:inline-flex;"><%- ico('plus', 12) %></span>Produit / service
               </button>
             <% } %>
           </div>
-        </div>
-      <% } else { %>
-        <div class="abo-card">
-          <%- include('partials/abo-ligne', { a: g.lignes[0], fiche: fiche, isAdmin: isAdmin, K: K, ico: ico, CATEGORIE_ICO: CATEGORIE_ICO, attr: attr, fmt: fmt, dansGroupe: false }) %>
-        </div>
-      <% } %>
+        <% } %>
+      </div>
     <% }); %>
   </div>
 </div>
@@ -295,6 +317,55 @@
   </div>
 </div>
 
+<%# Champs d'un produit / service, partagés entre le modal « nouvel abonnement » et le modal « produit ». %>
+<% var champsProduit = function (pfx) { %>
+  <label>Produit / service</label>
+  <input name="produit" id="<%= pfx %>-produit" placeholder="ex. Hébergement & Nom de Domaine - 1an">
+  <label>Description (libellé Stripe)</label>
+  <input name="description" id="<%= pfx %>-description" placeholder="ex. Hébergement & Domaine : monsite.fr">
+  <div class="form-grid-2">
+    <div>
+      <label>Catégorie</label>
+      <%- include('partials/select-field', {
+        name: 'categorie', id: pfx + '-categorie', value: 'hebergement_domaine',
+        options: K.CATEGORIES.map(function (v) { return { value: v, label: K.CATEGORIE_LABEL[v] }; })
+      }) %>
+    </div>
+    <div>
+      <label>Domaine(s)</label>
+      <input name="domaine" id="<%= pfx %>-domaine" placeholder="monsite.fr, autre.fr">
+    </div>
+  </div>
+  <div class="form-grid-2">
+    <div>
+      <label>Type de site</label>
+      <%- include('partials/select-field', {
+        name: 'type_site', id: pfx + '-type-site', value: '', placeholder: 'Non renseigné',
+        options: [{ value: '', label: 'Non renseigné' }].concat(K.TYPES_SITE.map(function (v) { return { value: v, label: v }; }))
+      }) %>
+    </div>
+    <div>
+      <label>Chez Hostinger</label>
+      <%- include('partials/select-field', {
+        name: 'hostinger', id: pfx + '-hostinger', value: '', placeholder: 'Non renseigné',
+        options: [{ value: '', label: 'Non renseigné' }].concat(K.HOSTINGER.map(function (v) { return { value: v, label: v }; }))
+      }) %>
+    </div>
+  </div>
+  <label>Lien de connexion au site</label>
+  <input name="lien_connexion" id="<%= pfx %>-lien" placeholder="monsite.fr/pixel-digital">
+  <div class="form-grid-2">
+    <div>
+      <label>Identifiant</label>
+      <input name="identifiant" id="<%= pfx %>-identifiant" autocomplete="off">
+    </div>
+    <div>
+      <label>Mot de passe</label>
+      <input name="mot_de_passe" id="<%= pfx %>-mdp" autocomplete="off">
+    </div>
+  </div>
+<% }; %>
+
 <div id="modal-abo" class="modal-overlay" style="display:none;">
   <div class="modal-box wide">
     <div class="modal-box-header">
@@ -302,39 +373,6 @@
       <button type="button" class="modal-close" onclick="document.getElementById('modal-abo').style.display='none'">&times;</button>
     </div>
     <form method="POST" action="/clients/<%= fiche.id %>/abonnements" id="form-abo">
-      <label>Produit / service</label>
-      <input name="produit" id="abo-produit" placeholder="ex. Hébergement & Nom de Domaine - 1an">
-      <label>Description (libellé Stripe)</label>
-      <input name="description" id="abo-description" placeholder="ex. Hébergement & Domaine : monsite.fr">
-      <div class="form-grid-2">
-        <div>
-          <label>Catégorie</label>
-          <%- include('partials/select-field', {
-            name: 'categorie', id: 'abo-categorie', value: 'hebergement_domaine',
-            options: K.CATEGORIES.map(function (v) { return { value: v, label: K.CATEGORIE_LABEL[v] }; })
-          }) %>
-        </div>
-        <div>
-          <label>Domaine(s)</label>
-          <input name="domaine" id="abo-domaine" placeholder="monsite.fr, autre.fr">
-        </div>
-      </div>
-      <div class="form-grid-2">
-        <div>
-          <label>Type de site</label>
-          <%- include('partials/select-field', {
-            name: 'type_site', id: 'abo-type-site', value: '', placeholder: 'Non renseigné',
-            options: [{ value: '', label: 'Non renseigné' }].concat(K.TYPES_SITE.map(function (v) { return { value: v, label: v }; }))
-          }) %>
-        </div>
-        <div>
-          <label>Chez Hostinger</label>
-          <%- include('partials/select-field', {
-            name: 'hostinger', id: 'abo-hostinger', value: '', placeholder: 'Non renseigné',
-            options: [{ value: '', label: 'Non renseigné' }].concat(K.HOSTINGER.map(function (v) { return { value: v, label: v }; }))
-          }) %>
-        </div>
-      </div>
       <div class="form-grid-3">
         <div>
           <label>Prix unitaire (€, par échéance)</label>
@@ -365,19 +403,25 @@
           <input name="stripe_subscription_id" id="abo-stripe" placeholder="sub_… (ou lien Stripe)">
         </div>
       </div>
-      <label>Lien de connexion au site</label>
-      <input name="lien_connexion" id="abo-lien" placeholder="monsite.fr/pixel-digital">
-      <div class="form-grid-2">
-        <div>
-          <label>Identifiant</label>
-          <input name="identifiant" id="abo-identifiant" autocomplete="off">
-        </div>
-        <div>
-          <label>Mot de passe</label>
-          <input name="mot_de_passe" id="abo-mdp" autocomplete="off">
-        </div>
+      <p class="muted" style="font-size:12px;margin:2px 0 10px;">Le prix vaut pour l'abonnement entier, quel que soit le nombre de produits / services rattachés.</p>
+      <div id="abo-premier-produit">
+        <div class="form-section-title">Premier produit / service</div>
+        <% champsProduit('abo'); %>
       </div>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;" id="modal-abo-submit">Ajouter</button>
+    </form>
+  </div>
+</div>
+
+<div id="modal-produit" class="modal-overlay" style="display:none;">
+  <div class="modal-box wide">
+    <div class="modal-box-header">
+      <h3 style="margin:0;" id="modal-produit-titre">Ajouter un produit / service</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-produit').style.display='none'">&times;</button>
+    </div>
+    <form method="POST" action="" id="form-produit">
+      <% champsProduit('prod'); %>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px;" id="modal-produit-submit">Ajouter</button>
     </form>
   </div>
 </div>
@@ -402,33 +446,51 @@
     document.getElementById('modal-client').style.display = 'flex';
   };
 
-  // el = bouton « modifier » (data-*) ou null pour un nouvel abonnement.
-  // el = bouton « modifier » (data-id + data-*), bouton « + produit / service » d'un
-  // abonnement Stripe (data-stripe sans data-id : nouveau produit pré-rempli), ou null.
+  // Remplit les champs produit d'un formulaire (préfixe 'abo' ou 'prod') depuis un dataset.
+  function remplirProduit(pfx, d, modif) {
+    document.getElementById(pfx + '-produit').value = d.produit || '';
+    document.getElementById(pfx + '-description').value = d.description || '';
+    document.getElementById(pfx + '-domaine').value = d.domaine || '';
+    document.getElementById(pfx + '-lien').value = d.lien || '';
+    document.getElementById(pfx + '-identifiant').value = d.identifiant || '';
+    document.getElementById(pfx + '-mdp').value = d.mdp || '';
+    setSelect(pfx + '-categorie', modif ? d.categorie : 'hebergement_domaine');
+    setSelect(pfx + '-type-site', d.typeSite !== undefined ? (d.typeSite || '') : 'WordPress', 'Non renseigné');
+    setSelect(pfx + '-hostinger', d.hostinger || '', 'Non renseigné');
+  }
+
+  // el = bouton « modifier » d'un abonnement (data-id + data-*), ou null pour un nouvel
+  // abonnement (le formulaire inclut alors son premier produit / service).
   window.ouvrirModalAbonnement = function (el) {
     var d = el ? el.dataset : {};
     var modif = !!(el && d.id);
-    var modal = document.getElementById('modal-abo');
     var form = document.getElementById('form-abo');
     form.reset();
-    document.getElementById('modal-abo-titre').textContent = modif ? 'Modifier le produit / service' : (d.stripe ? 'Ajouter un produit / service à l\'abonnement' : 'Ajouter un abonnement');
+    document.getElementById('modal-abo-titre').textContent = modif ? 'Modifier l\'abonnement' : 'Ajouter un abonnement';
     document.getElementById('modal-abo-submit').textContent = modif ? 'Enregistrer' : 'Ajouter';
+    document.getElementById('abo-premier-produit').style.display = modif ? 'none' : '';
     form.action = '/clients/<%= fiche.id %>/abonnements' + (modif ? '/' + d.id : '');
-    document.getElementById('abo-produit').value = d.produit || '';
-    document.getElementById('abo-description').value = d.description || '';
-    document.getElementById('abo-domaine').value = d.domaine || '';
     document.getElementById('abo-prix').value = d.prix || '';
     document.getElementById('abo-quantite').value = d.quantite || '';
     document.getElementById('abo-stripe').value = d.stripe || '';
-    document.getElementById('abo-lien').value = d.lien || '';
-    document.getElementById('abo-identifiant').value = d.identifiant || '';
-    document.getElementById('abo-mdp').value = d.mdp || '';
-    setSelect('abo-categorie', modif ? d.categorie : 'hebergement_domaine');
-    setSelect('abo-type-site', el ? (d.typeSite || '') : 'WordPress', 'Non renseigné');
-    setSelect('abo-hostinger', el ? (d.hostinger || '') : '', 'Non renseigné');
-    setSelect('abo-periodicite', el ? (d.periodicite || '') : 'annuel', 'Ponctuel');
-    setSelect('abo-moyen', el ? (d.moyen || '') : 'Prélèvement');
-    modal.style.display = 'flex';
+    setSelect('abo-periodicite', modif ? (d.periodicite || '') : 'annuel', 'Ponctuel');
+    setSelect('abo-moyen', modif ? (d.moyen || '') : 'Prélèvement');
+    if (!modif) remplirProduit('abo', {}, false);
+    document.getElementById('modal-abo').style.display = 'flex';
+  };
+
+  // el = bouton « modifier » d'un produit (data-id + data-sid + data-*), ou bouton
+  // « + produit / service » d'un abonnement (data-sid seul, accès pré-remplis).
+  window.ouvrirModalProduit = function (el) {
+    var d = el.dataset;
+    var modif = !!d.id;
+    var form = document.getElementById('form-produit');
+    form.reset();
+    document.getElementById('modal-produit-titre').textContent = modif ? 'Modifier le produit / service' : 'Ajouter un produit / service à l\'abonnement';
+    document.getElementById('modal-produit-submit').textContent = modif ? 'Enregistrer' : 'Ajouter';
+    form.action = '/clients/<%= fiche.id %>/abonnements/' + d.sid + '/produits' + (modif ? '/' + d.id : '');
+    remplirProduit('prod', modif ? d : { domaine: d.domaine, typeSite: d.typeSite, hostinger: d.hostinger, lien: d.lien, identifiant: d.identifiant, mdp: d.mdp }, modif);
+    document.getElementById('modal-produit').style.display = 'flex';
   };
 </script>
 <% } %>
