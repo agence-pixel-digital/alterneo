@@ -111,6 +111,32 @@ function trierAbonnements(liste) {
     (a.ordre - b.ordre) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
 }
 
+// Regroupe les lignes par abonnement : les lignes qui partagent un même ID
+// d'abonnement Stripe forment un seul abonnement à plusieurs produits / services ;
+// une ligne sans ID Stripe est un abonnement à elle seule.
+function grouperAbonnements(abos) {
+  const groupes = [];
+  const parCle = {};
+  (abos || []).forEach(a => {
+    const cle = a.stripe_subscription_id ? 'stripe:' + a.stripe_subscription_id : 'ligne:' + a.id;
+    let g = parCle[cle];
+    if (!g) {
+      g = { cle, stripe_subscription_id: a.stripe_subscription_id || null, lienStripe: lienStripeAbonnement(a.stripe_subscription_id), lignes: [], periodicites: [], moyens: [] };
+      parCle[cle] = g; groupes.push(g);
+    }
+    g.lignes.push(a);
+    if (a.periodicite && !g.periodicites.includes(a.periodicite)) g.periodicites.push(a.periodicite);
+    if (a.moyen_paiement && !g.moyens.includes(a.moyen_paiement)) g.moyens.push(a.moyen_paiement);
+  });
+  groupes.forEach(g => {
+    let total = null;
+    g.lignes.forEach(a => { const m = montantAnnuel(a); if (m !== null) total = (total || 0) + m; });
+    g.montantAnnuel = total;
+    g.ponctuel = g.lignes.every(a => !a.periodicite);
+  });
+  return groupes;
+}
+
 // Catégories présentes chez un client, dans l'ordre du référentiel, sans doublon.
 function categoriesDe(abos) {
   const vues = {};
@@ -124,5 +150,5 @@ module.exports = {
   MOYENS_PAIEMENT, TYPES_SITE, HOSTINGER, TYPES_STRUCTURE,
   lienStripeClient, lienStripeAbonnement, extraireIdStripe,
   domaines, liensConnexion, urlSure, nombre, montant, montantAnnuel, totaux, formatEuro,
-  trierAbonnements, categoriesDe
+  trierAbonnements, categoriesDe, grouperAbonnements
 };

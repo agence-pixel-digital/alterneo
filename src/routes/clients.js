@@ -9,8 +9,9 @@ const { ico, CATEGORIE_ICO } = require('../lib/icones');
 // consultent) ; création / modification / suppression réservées à l'admin
 // (double sécurité : requireAdmin côté route + RLS is_admin() côté base).
 //
-// Un client porte plusieurs abonnements / services : chaque
-// ligne de client_abonnements correspond à une facturation (Stripe ou non).
+// Un client porte plusieurs abonnements / services : chaque ligne de
+// client_abonnements est un produit / service facturé ; les lignes qui partagent
+// un même ID d'abonnement Stripe sont affichées sous un seul abonnement.
 
 const t = (v) => { const s = (v || '').trim(); return s || null; };
 
@@ -72,6 +73,7 @@ function preparerClient(c) {
   c.abonnements = K.trierAbonnements(c.client_abonnements).map(preparerAbonnement);
   delete c.client_abonnements;
   c.totaux = K.totaux(c.abonnements);
+  c.groupes = K.grouperAbonnements(c.abonnements);
   c.categories = K.categoriesDe(c.abonnements);
   c.lienStripe = K.lienStripeClient(c.stripe_customer_id);
   const sites = [];
