@@ -519,3 +519,30 @@ a.access-item:hover { text-decoration:underline; }
   .abo-price { text-align:left; width:100%; padding-left:50px; }
   .client-hero-stats .hero-stat { flex-basis:calc(50% - 5px); }
 }
+
+/* ===== Devis ===== */
+.dv-main { flex:1.5; min-width:170px; }
+.dv-contact { display:flex; flex-wrap:wrap; gap:4px 10px; font-size:12.5px; color:#5B6B7D; margin-top:2px; }
+.dv-contact a { color:#2E5C8A; font-weight:600; }
+.dv-contact a:hover { text-decoration:underline; }
+.dv-client { margin-left:6px; font-size:10.5px; font-weight:700; color:#4B45C6; background:#EEEDFF; border-radius:8px; padding:1px 7px; text-transform:uppercase; letter-spacing:.3px; vertical-align:middle; }
+.dv-client:hover { background:#E2E0FF; }
+.dv-desc { flex:1.6; min-width:150px; font-size:12.5px; color:#5B6B7D; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dv-montant { flex:.7; min-width:96px; font-size:13px; font-weight:700; color:#1C2A3A; font-variant-numeric:tabular-nums; }
+.dv-statut { flex:0 0 150px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.dv-date { flex:0 0 150px; font-size:12.5px; color:#5B6B7D; white-space:nowrap; }
+.dv-actions { flex:0 0 150px; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-left:auto; }
+.devis-row:hover { background:#FAFBFD; }
+.attente-chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; background:#EEF1F5; color:#5B6B7D; white-space:nowrap; }
+.attente-chip.warn, .dv-statut .attente-chip { background:#F8E8E2; color:#9A3D22; }
+.kanban-total { font-size:11.5px; font-weight:700; color:#5B6B7D; text-transform:none; letter-spacing:0; font-variant-numeric:tabular-nums; }
+.kc-montant { font-size:12.5px; font-weight:800; color:#1C2A3A; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.kc-desc { font-size:12px; color:#7A8699; margin-top:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.kc-foot { display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; margin-top:9px; padding-top:8px; border-top:1px dashed #EEF1F5; font-size:11px; font-weight:600; color:#9AA7B5; }
+.kanban-empty { text-align:center; font-size:12px; color:#9AA7B5; padding:14px 0 6px; }
+.kanban-add { width:100%; margin-top:4px; padding:8px; border:1.5px dashed #D5DCE5; border-radius:10px; background:transparent; color:#5B6B7D; font-size:12.5px; font-weight:700; cursor:pointer; }
+.kanban-add:hover { border-color:#2E5C8A; color:#2E5C8A; background:#fff; }
+@media (max-width: 640px) {
+  .dv-statut, .dv-date { flex:1 1 45%; }
+  .dv-actions { margin-left:0; }
+}

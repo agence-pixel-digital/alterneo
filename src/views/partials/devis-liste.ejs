@@ -1,0 +1,109 @@
+<%# Vue liste des devis. Paramètres : devis, totaux, D, retourCourant, attrs, dateCourte. %>
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+    <h3 style="margin:0;">Devis (<span id="devis-count"><%= devis.length %></span>)</h3>
+    <div class="inline-filter-bar">
+      <input type="search" id="devis-search" class="search-input" placeholder="Rechercher (entreprise, contact, mail, description…)" autocomplete="off" style="width:320px;">
+      <button type="button" class="btn btn-primary" onclick="ouvrirModalDevis()">+ Nouveau devis</button>
+    </div>
+  </div>
+
+  <div class="filter-chips" id="devis-filtres">
+    <button type="button" class="chip-filter active" data-filtre="">Tous<span class="n"><%= devis.length %></span></button>
+    <% D.STATUTS.forEach(function (s) { %>
+      <button type="button" class="chip-filter" data-filtre="<%= s %>"><span class="type-dot" style="background:<%= D.STATUT_DOT[s] %>;"></span><%= D.STATUT_COURT[s] %><span class="n"><%= totaux[s].nb %></span></button>
+    <% }); %>
+  </div>
+
+  <% if (devis.length === 0) { %>
+    <div class="empty-state">Aucun devis pour l'instant. Créez le premier avec « + Nouveau devis ».</div>
+  <% } else { %>
+    <div class="client-table-head">
+      <div class="dv-main">Entreprise · contact</div>
+      <div class="dv-desc">Description</div>
+      <div class="dv-montant">Montant HT</div>
+      <div class="dv-statut">Statut</div>
+      <div class="dv-date">Date</div>
+      <div class="dv-actions"></div>
+    </div>
+  <% } %>
+
+  <% devis.forEach(function (d) { %>
+    <%
+      var recherche = [d.entreprise, d.contact, d.email, d.telephone, d.description, d.clientLie && d.clientLie.nom, D.STATUT_LABEL[d.statut]]
+        .filter(Boolean).join(' ').toLowerCase();
+      var suivant = d.statut === 'a_faire' ? 'envoye' : (d.statut === 'envoye' ? 'valide' : null);
+    %>
+    <div class="list-row devis-row" data-search="<%= recherche %>" data-filtre-statut="<%= d.statut %>" <%- attrs(d) %>
+      style="cursor:pointer;" onclick="ouvrirModalDevis(this)">
+      <div class="dv-main">
+        <div style="font-size:13.5px;font-weight:700;"><%= d.entreprise %>
+          <% if (d.clientLie) { %><a href="/clients/<%= d.clientLie.id %>" class="dv-client" onclick="event.stopPropagation()" title="Ouvrir la fiche client">client</a><% } %>
+        </div>
+        <div class="dv-contact">
+          <% if (d.contact) { %><span><%= d.contact %></span><% } %>
+          <% if (d.telephone) { %><a href="tel:<%= d.telephone.replace(/\s/g, '') %>" onclick="event.stopPropagation()"><%= d.telephone %></a><% } %>
+          <% if (d.email) { %><a href="mailto:<%= d.email %>" onclick="event.stopPropagation()"><%= d.email %></a><% } %>
+          <% if (!d.contact && !d.telephone && !d.email) { %><span class="muted">Aucun contact</span><% } %>
+        </div>
+      </div>
+      <div class="dv-desc" title="<%= d.description || '' %>"><%= d.description || '—' %></div>
+      <div class="dv-montant"><%= d.montantFmt || '—' %></div>
+      <div class="dv-statut">
+        <span class="badge <%= D.STATUT_BADGE[d.statut] %>"><%= D.STATUT_LABEL[d.statut] %></span>
+        <% if (d.joursAttente !== null && d.joursAttente >= 14) { %><span class="attente-chip" title="Envoyé le <%= dateCourte(d.date_envoi) %>">+<%= d.joursAttente %> j</span><% } %>
+      </div>
+      <div class="dv-date">
+        <% if (d.statut === 'valide') { %>Validé le <%= dateCourte(d.date_validation) %>
+        <% } else if (d.statut === 'envoye') { %>Envoyé le <%= dateCourte(d.date_envoi) %>
+        <% } else { %>Créé le <%= dateCourte(d.created_at) %><% } %>
+      </div>
+      <div class="dv-actions">
+        <% if (suivant) { %>
+          <form method="POST" action="/devis/<%= d.id %>/statut" style="margin:0;" onclick="event.stopPropagation()">
+            <input type="hidden" name="retour" value="<%= retourCourant %>">
+            <input type="hidden" name="statut" value="<%= suivant %>">
+            <button type="submit" class="btn btn-outline btn-sm" title="Passer en « <%= D.STATUT_LABEL[suivant] %> »">
+              <%= suivant === 'envoye' ? 'Marquer envoyé' : 'Valider' %>
+            </button>
+          </form>
+        <% } %>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" stroke-width="2" style="flex-shrink:0;"><path d="M9 6l6 6-6 6"></path></svg>
+      </div>
+    </div>
+  <% }); %>
+  <div class="empty-state" id="devis-vide" style="display:none;">Aucun devis ne correspond à la recherche.</div>
+</div>
+
+<script>
+  // Recherche live + filtre par statut sur les lignes déjà rendues.
+  (function () {
+    var input = document.getElementById('devis-search');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.devis-row'));
+    var compteur = document.getElementById('devis-count');
+    var vide = document.getElementById('devis-vide');
+    var chips = Array.prototype.slice.call(document.querySelectorAll('#devis-filtres .chip-filter'));
+    var filtre = '';
+
+    function appliquer() {
+      var q = (input ? input.value : '').trim().toLowerCase();
+      var n = 0;
+      rows.forEach(function (r) {
+        var ok = (r.dataset.search || '').indexOf(q) !== -1 && (!filtre || r.dataset.filtreStatut === filtre);
+        r.style.display = ok ? '' : 'none';
+        if (ok) n++;
+      });
+      if (compteur) compteur.textContent = n;
+      if (vide) vide.style.display = (n === 0 && rows.length) ? '' : 'none';
+    }
+
+    if (input) input.addEventListener('input', appliquer);
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        filtre = chip.dataset.filtre || '';
+        chips.forEach(function (c) { c.classList.toggle('active', c === chip); });
+        appliquer();
+      });
+    });
+  })();
+</script>

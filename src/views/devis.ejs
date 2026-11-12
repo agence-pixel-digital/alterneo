@@ -1,0 +1,155 @@
+<%- include('partials/header', { title: 'Devis', active: 'devis' }) %>
+
+<%
+  var retourCourant = '/devis' + (vue !== 'liste' ? '?vue=' + vue : '');
+  var fmt = D.formatEuro;
+  var esc = function (s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  };
+  // Attributs data-* partagés par la liste et le kanban : ils alimentent la modale de modification.
+  var attrs = function (d) {
+    return 'data-id="' + esc(d.id) + '" data-entreprise="' + esc(d.entreprise) + '"' +
+      ' data-prenom="' + esc(d.contact_prenom) + '" data-nom="' + esc(d.contact_nom) + '"' +
+      ' data-telephone="' + esc(d.telephone) + '" data-email="' + esc(d.email) + '"' +
+      ' data-description="' + esc(d.description) + '" data-montant="' + esc(d.montant === null || d.montant === undefined ? '' : String(d.montant).replace('.', ',')) + '"' +
+      ' data-statut="' + esc(d.statut) + '" data-client-id="' + esc(d.client_id) + '"';
+  };
+  var dateCourte = function (v) { return v ? formatDate(String(v).slice(0, 10)) : ''; };
+%>
+
+<div class="grid-3">
+  <div class="card">
+    <div class="stat-label">À faire</div>
+    <div class="stat-value" style="color:#2E5C8A;"><%= totaux.a_faire.nb %></div>
+    <div class="stat-sub"><%= totaux.a_faire.montant ? fmt(totaux.a_faire.montant) + ' à chiffrer / rédiger' : 'Devis à rédiger' %></div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Envoyés · en attente</div>
+    <div class="stat-value" style="color:#B7791F;"><%= fmt(totaux.envoye.montant) %></div>
+    <div class="stat-sub"><%= totaux.envoye.nb %> devis en attente de réponse</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Validés</div>
+    <div class="stat-value" style="color:#15784F;"><%= fmt(totaux.valide.montant) %></div>
+    <div class="stat-sub"><%= totaux.valide.nb %> devis signé<%= totaux.valide.nb > 1 ? 's' : '' %></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <a href="/devis" class="<%= vue === 'liste' ? 'active' : '' %>">Liste</a>
+  <a href="/devis?vue=kanban" class="<%= vue === 'kanban' ? 'active' : '' %>">Tableau</a>
+</div>
+
+<% if (vue === 'kanban') { %>
+  <%- include('partials/devis-kanban', { retourCourant, attrs, dateCourte }) %>
+<% } else { %>
+  <%- include('partials/devis-liste', { retourCourant, attrs, dateCourte }) %>
+<% } %>
+
+<div id="modal-devis" class="modal-overlay" style="display:none;">
+  <div class="modal-box wide">
+    <div class="modal-box-header">
+      <h3 style="margin:0;" id="modal-devis-titre">Nouveau devis</h3>
+      <button type="button" class="modal-close" onclick="document.getElementById('modal-devis').style.display='none'">✕</button>
+    </div>
+    <form method="POST" action="/devis" id="form-devis">
+      <input type="hidden" name="retour" value="<%= retourCourant %>">
+      <div class="form-grid-2">
+        <div>
+          <label>Entreprise</label>
+          <input name="entreprise" id="devis-entreprise" required placeholder="ex. Boulangerie Martin">
+        </div>
+        <div>
+          <label>Client existant (optionnel)</label>
+          <%- include('partials/select-field', {
+            name: 'client_id', id: 'devis-client', value: '', placeholder: 'Aucun — nouveau prospect',
+            options: [{ value: '', label: 'Aucun — nouveau prospect' }].concat(clients.map(function (c) { return { value: c.id, label: c.nom }; }))
+          }) %>
+        </div>
+      </div>
+      <div class="form-section-title">Contact</div>
+      <div class="form-grid-2">
+        <div>
+          <label>Prénom</label>
+          <input name="contact_prenom" id="devis-prenom" placeholder="Marie">
+        </div>
+        <div>
+          <label>Nom</label>
+          <input name="contact_nom" id="devis-nom" placeholder="Martin">
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div>
+          <label>Téléphone</label>
+          <input name="telephone" id="devis-telephone" placeholder="06 12 34 56 78">
+        </div>
+        <div>
+          <label>E-mail</label>
+          <input name="email" id="devis-email" type="email" placeholder="contact@exemple.fr">
+        </div>
+      </div>
+      <div class="form-section-title">Devis</div>
+      <label>Description</label>
+      <textarea name="description" id="devis-description" rows="3" placeholder="Prestation demandée, périmètre, points d'attention…"></textarea>
+      <div class="form-grid-2">
+        <div>
+          <label>Montant du devis (€ HT)</label>
+          <input name="montant" id="devis-montant" inputmode="decimal" placeholder="ex. 1 200">
+        </div>
+        <div>
+          <label>Statut</label>
+          <%- include('partials/select-field', { name: 'statut', id: 'devis-statut', value: 'a_faire',
+            options: D.STATUTS.map(function (v) { return { value: v, label: D.STATUT_LABEL[v] }; }) }) %>
+        </div>
+      </div>
+      <p class="muted" style="font-size:12px;margin:2px 0 12px;">Les dates d'envoi et de validation se remplissent automatiquement au changement de statut.</p>
+      <button class="btn btn-primary" type="submit" style="width:100%;" id="modal-devis-submit">Créer le devis</button>
+    </form>
+    <form method="POST" id="form-supprimer-devis" action="" style="display:none;margin-top:10px;"
+      onsubmit="return confirm('Supprimer définitivement ce devis ?');">
+      <input type="hidden" name="retour" value="<%= retourCourant %>">
+      <button class="btn" type="submit" style="width:100%;background:#C2502E;color:#fff;">Supprimer ce devis</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Met à jour un composant select-field depuis le JS (valeur cachée + libellé).
+  function setSelect(id, value, placeholderLabel) {
+    var hidden = document.getElementById(id);
+    var field = hidden.closest('.select-field');
+    var opt = field.querySelector('.select-option[data-value="' + value + '"]');
+    field.querySelectorAll('.select-option').forEach(function (o) { o.classList.remove('selected'); });
+    if (!opt) {
+      hidden.value = '';
+      field.querySelector('.select-label').textContent = placeholderLabel || '';
+      return;
+    }
+    hidden.value = opt.dataset.value;
+    field.querySelector('.select-label').textContent = opt.dataset.label;
+    opt.classList.add('selected');
+  }
+
+  // Une seule modale pour créer (sans élément) ou modifier (élément porteur des data-*).
+  function ouvrirModalDevis(el, statutInitial) {
+    var d = el ? el.dataset : {};
+    var modif = !!(el && d.id);
+    var modal = document.getElementById('modal-devis');
+    var suppr = document.getElementById('form-supprimer-devis');
+    document.getElementById('modal-devis-titre').textContent = modif ? 'Modifier le devis' : 'Nouveau devis';
+    document.getElementById('modal-devis-submit').textContent = modif ? 'Enregistrer' : 'Créer le devis';
+    document.getElementById('form-devis').action = modif ? '/devis/' + d.id : '/devis';
+    suppr.style.display = modif ? 'block' : 'none';
+    if (modif) suppr.action = '/devis/' + d.id + '/supprimer';
+    ['entreprise', 'prenom', 'nom', 'telephone', 'email', 'description', 'montant'].forEach(function (k) {
+      document.getElementById('devis-' + k).value = d[k] || '';
+    });
+    setSelect('devis-statut', d.statut || statutInitial || 'a_faire');
+    setSelect('devis-client', d.clientId || '', 'Aucun — nouveau prospect');
+    modal.style.display = 'flex';
+    setTimeout(function () { document.getElementById('devis-entreprise').focus(); }, 50);
+  }
+</script>
+
+<%- include('partials/footer') %>

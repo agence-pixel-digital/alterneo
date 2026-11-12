@@ -47,6 +47,7 @@ app.use('/', require('./src/routes/parametres'));
 app.use('/', require('./src/routes/envoiComptable'));
 app.use('/', require('./src/routes/projets'));
 app.use('/', require('./src/routes/tickets'));
+app.use('/', require('./src/routes/devis'));
 app.use('/', require('./src/routes/clients'));
 app.use('/', require('./src/routes/compte'));
 

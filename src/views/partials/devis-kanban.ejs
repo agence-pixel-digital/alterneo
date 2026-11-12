@@ -1,0 +1,108 @@
+<%# Vue tableau (kanban) des devis. Paramètres : devis, totaux, D, retourCourant, attrs, dateCourte. %>
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px;">
+    <div>
+      <h3 style="margin:0;">Tableau</h3>
+      <div class="muted" style="font-size:12.5px;margin-top:3px;">Glissez une carte d'une colonne à l'autre pour changer son statut.</div>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="ouvrirModalDevis()">+ Nouveau devis</button>
+  </div>
+
+  <div class="kanban">
+    <% D.STATUTS.forEach(function (statut) { %>
+      <% var cartes = devis.filter(function (d) { return d.statut === statut; }); %>
+      <div class="kanban-col" data-statut="<%= statut %>">
+        <div class="kanban-col-header">
+          <span><span class="type-dot" style="background:<%= D.STATUT_DOT[statut] %>;"></span><%= D.STATUT_COURT[statut] %></span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <% if (totaux[statut].montant) { %><span class="kanban-total"><%= D.formatEuro(totaux[statut].montant) %></span><% } %>
+            <span class="kanban-count"><%= cartes.length %></span>
+          </span>
+        </div>
+        <div class="kanban-cards">
+          <% cartes.forEach(function (d) { %>
+            <div class="kanban-card draggable devis-card" draggable="true" <%- attrs(d) %> onclick="clicCarteDevis(this)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                <div style="font-size:13px;font-weight:700;min-width:0;"><%= d.entreprise %></div>
+                <% if (d.montantFmt) { %><div class="kc-montant"><%= d.montantFmt %></div><% } %>
+              </div>
+              <% if (d.contact) { %><div style="font-size:11.5px;color:#5B6B7D;font-weight:600;margin-top:3px;"><%= d.contact %></div><% } %>
+              <% if (d.description) { %><div class="kc-desc"><%= d.description %></div><% } %>
+              <div class="kc-foot">
+                <% if (statut === 'valide') { %>
+                  <span>Validé le <%= dateCourte(d.date_validation) %></span>
+                <% } else if (statut === 'envoye') { %>
+                  <span>Envoyé le <%= dateCourte(d.date_envoi) %></span>
+                  <% if (d.joursAttente !== null && d.joursAttente >= 1) { %>
+                    <span class="attente-chip <%= d.joursAttente >= 14 ? 'warn' : '' %>">
+                      <%= d.joursAttente %> j<%= d.joursAttente >= 14 ? ' · à relancer' : '' %>
+                    </span>
+                  <% } %>
+                <% } else { %>
+                  <span>Créé le <%= dateCourte(d.created_at) %></span>
+                <% } %>
+                <% if (d.clientLie) { %><a href="/clients/<%= d.clientLie.id %>" class="dv-client" onclick="event.stopPropagation()" title="Ouvrir la fiche client">client</a><% } %>
+              </div>
+            </div>
+          <% }); %>
+          <% if (!cartes.length) { %><div class="kanban-empty">Aucun devis</div><% } %>
+        </div>
+        <button type="button" class="kanban-add" onclick="ouvrirModalDevis(null, '<%= statut %>')">+ Ajouter ici</button>
+      </div>
+    <% }); %>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var draggee = null;
+    var vientDeGlisser = false;
+
+    document.querySelectorAll('.devis-card[draggable="true"]').forEach(function (card) {
+      card.addEventListener('dragstart', function (e) {
+        draggee = card;
+        vientDeGlisser = true;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', function () {
+        card.classList.remove('dragging');
+        setTimeout(function () { vientDeGlisser = false; }, 0);
+      });
+    });
+
+    document.querySelectorAll('.kanban-col').forEach(function (col) {
+      col.addEventListener('dragover', function (e) { e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', function () { col.classList.remove('drag-over'); });
+      col.addEventListener('drop', function (e) {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        if (!draggee) return;
+        var card = draggee;
+        draggee = null;
+        var statut = col.dataset.statut;
+        if (card.dataset.statut === statut) return;
+        card.dataset.statut = statut;
+        col.querySelector('.kanban-cards').appendChild(card);
+        fetch('/devis/' + card.dataset.id + '/statut', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' },
+          body: 'statut=' + encodeURIComponent(statut)
+        }).then(function (r) {
+          if (!r.ok) throw new Error();
+          // Les dates (envoi / validation) et les totaux sont recalculés côté serveur.
+          window.location.reload();
+        }).catch(function () {
+          alert('Impossible de déplacer ce devis.');
+          window.location.reload();
+        });
+      });
+    });
+
+    // Le clic ouvre la modale — sauf s'il conclut un glisser-déposer.
+    window.clicCarteDevis = function (card) {
+      if (vientDeGlisser) return;
+      ouvrirModalDevis(card);
+    };
+  })();
+</script>
